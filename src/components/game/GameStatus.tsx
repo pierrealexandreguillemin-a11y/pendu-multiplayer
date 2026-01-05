@@ -7,8 +7,10 @@ interface GameStatusProps {
   status: GameStatusType;
   errors: number;
   category?: string;
+  score?: number;
   onPlayAgain?: () => void;
   onBackToMenu?: () => void;
+  onShowLeaderboard?: () => void;
 }
 
 /**
@@ -18,8 +20,10 @@ export function GameStatus({
   status,
   errors,
   category,
+  score,
   onPlayAgain,
   onBackToMenu,
+  onShowLeaderboard,
 }: GameStatusProps) {
   const remainingAttempts = MAX_ERRORS - errors;
 
@@ -67,6 +71,14 @@ export function GameStatus({
         {isWin ? 'Tu as trouvé le mot !' : `Tu n'as pas trouvé le mot...`}
       </p>
 
+      {/* Score display */}
+      {score !== undefined && score > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🏆</span>
+          <span className="text-xl font-bold text-yellow-600">+{score} points</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 mt-2">
         {onPlayAgain && (
           <button
@@ -97,6 +109,20 @@ export function GameStatus({
             "
           >
             Menu
+          </button>
+        )}
+
+        {onShowLeaderboard && (
+          <button
+            onClick={onShowLeaderboard}
+            className="
+              px-6 py-3 rounded-lg font-semibold
+              bg-yellow-500 hover:bg-yellow-600 text-white
+              transition-all duration-150
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500
+            "
+          >
+            Classement
           </button>
         )}
       </div>
