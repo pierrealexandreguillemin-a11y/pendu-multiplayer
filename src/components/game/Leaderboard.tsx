@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useLeaderboardStore } from '@/stores/leaderboard';
 import type { GameMode } from '@/types/game';
 import { GlassCard } from '@/components/effects/glass-card';
@@ -17,6 +18,7 @@ interface LeaderboardProps {
 export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps) {
   const { getTopScores, clearMode } = useLeaderboardStore();
   const entries = getTopScores(mode, 10);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const modeLabels: Record<GameMode, string> = {
     solo: 'Solo',
@@ -30,10 +32,17 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
     pvp: 'text-pink-400',
   };
 
-  const handleClear = () => {
-    if (confirm('Effacer le classement ?')) {
-      clearMode(mode);
-    }
+  const handleClearClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleClearConfirm = () => {
+    clearMode(mode);
+    setShowConfirm(false);
+  };
+
+  const handleClearCancel = () => {
+    setShowConfirm(false);
   };
 
   return (
@@ -108,15 +117,38 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
           >
             Fermer
           </button>
-          {entries.length > 0 && (
+          {entries.length > 0 && !showConfirm && (
             <button
-              onClick={handleClear}
+              onClick={handleClearClick}
               className="py-2 px-4 bg-red-500/20 hover:bg-red-500/40 rounded-lg text-red-400 transition-colors text-sm"
             >
               Effacer
             </button>
           )}
         </div>
+
+        {/* Confirmation modal */}
+        {showConfirm && (
+          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-red-300 text-sm mb-3">
+              Effacer tous les scores {modeLabels[mode]} ?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleClearConfirm}
+                className="flex-1 py-2 px-3 bg-red-500 hover:bg-red-600 rounded text-white text-sm font-medium transition-colors"
+              >
+                Confirmer
+              </button>
+              <button
+                onClick={handleClearCancel}
+                className="flex-1 py-2 px-3 bg-white/10 hover:bg-white/20 rounded text-gray-300 text-sm transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
       </GlassCard>
     </div>
   );
