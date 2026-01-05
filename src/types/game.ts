@@ -155,3 +155,27 @@ export type GameMessage = StartGameMessage | GuessMessage | StateMessage | Resta
 
 /** Connection status for multiplayer */
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+// ============================================================================
+// LEADERBOARD (Score tracking per mode)
+// ============================================================================
+
+/** Entry in the leaderboard */
+export interface LeaderboardEntry {
+  /** Unique identifier */
+  id: string;
+  /** Player name */
+  playerName: string;
+  /** Game mode */
+  mode: GameMode;
+  /** Score (number of letters in word) */
+  score: number;
+  /** The word that was guessed */
+  word: string;
+  /** Number of errors made */
+  errors: number;
+  /** Whether the player won */
+  won: boolean;
+  /** Timestamp of game completion */
+  timestamp: number;
+}

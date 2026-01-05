@@ -7,6 +7,7 @@ import {
   normalizeWord,
   isGameOver,
   canGuess,
+  calculateScore,
 } from '@/lib/game-engine';
 import type { GameState, Letter } from '@/types/game';
 import { MAX_ERRORS } from '@/types/game';
@@ -243,6 +244,36 @@ describe('GameEngine', () => {
       const result = guessLetter(state, 'A');
 
       expect(canGuess(result.state, 'B')).toBe(false);
+    });
+  });
+
+  describe('calculateScore', () => {
+    it('should_return_word_length_for_simple_words', () => {
+      expect(calculateScore('PENDU')).toBe(5);
+      expect(calculateScore('CHAT')).toBe(4);
+      expect(calculateScore('ELEPHANT')).toBe(8);
+    });
+
+    it('should_not_count_spaces', () => {
+      expect(calculateScore('BON JOUR')).toBe(7); // BONJOUR without space
+      expect(calculateScore('POMME DE TERRE')).toBe(12);
+    });
+
+    it('should_not_count_hyphens', () => {
+      expect(calculateScore('ARC-EN-CIEL')).toBe(9); // ARCENCIEL
+    });
+
+    it('should_handle_single_letter_word', () => {
+      expect(calculateScore('A')).toBe(1);
+    });
+
+    it('should_handle_empty_string', () => {
+      expect(calculateScore('')).toBe(0);
+    });
+
+    it('should_work_with_normalized_words_from_game', () => {
+      const state = createGame({ word: 'arc-en-ciel' });
+      expect(calculateScore(state.word)).toBe(9);
     });
   });
 });

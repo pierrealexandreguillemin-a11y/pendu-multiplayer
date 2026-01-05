@@ -203,3 +203,12 @@ export function getGuessedLetters(state: GameState): Set<Letter> {
 export function getRemainingAttempts(state: GameState): number {
   return MAX_ERRORS - state.errors;
 }
+
+/**
+ * Calculate score for a word
+ * Score = number of letters (spaces, hyphens, etc. don't count)
+ */
+export function calculateScore(word: string): number {
+  // Count only letters A-Z (normalized word is uppercase)
+  return word.replace(/[^A-Z]/g, '').length;
+}
