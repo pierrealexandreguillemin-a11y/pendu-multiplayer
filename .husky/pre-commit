@@ -1,0 +1,17 @@
+# ISO 5055 Compliant Pre-commit Hook
+# Ensures code quality before commit
+
+echo "Running pre-commit checks..."
+
+# 1. Run lint-staged (ESLint + Prettier on staged files)
+npx lint-staged
+
+# 2. TypeScript type checking
+echo "Checking TypeScript types..."
+npm run typecheck
+
+# 3. Run tests
+echo "Running tests..."
+npm run test:run
+
+echo "Pre-commit checks passed!"

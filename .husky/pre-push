@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# ISO 5055 Compliant Pre-push Hook
+# Ensures build quality before push
+
+echo "Running pre-push checks..."
+
+# 1. Full TypeScript check
+echo "Checking TypeScript types..."
+npm run typecheck
+
+# 2. Full ESLint check (all files)
+echo "Running ESLint..."
+npm run lint
+
+# 3. Run all tests
+echo "Running tests..."
+npm run test:run
+
+# 4. Build check
+echo "Building project..."
+npm run build
+
+echo "Pre-push checks passed!"
