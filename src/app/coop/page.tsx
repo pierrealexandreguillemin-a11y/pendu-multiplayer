@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { QRCodeSVG } from 'qrcode.react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { HangmanDrawing } from '@/components/game/HangmanDrawing';
@@ -15,10 +17,37 @@ import Link from 'next/link';
 
 type GamePhase = 'lobby' | 'waiting' | 'playing';
 
+/** Main page component wrapped in Suspense for useSearchParams */
 export default function CoopPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800">
+          <p className="text-white">Chargement...</p>
+        </main>
+      }
+    >
+      <CoopContent />
+    </Suspense>
+  );
+}
+
+/** Actual coop game content */
+function CoopContent() {
+  const searchParams = useSearchParams();
+
+  // Initialize joinId from URL query param (from QR code scan)
+  const initialJoinId = searchParams.get('join') ?? '';
+
   const [phase, setPhase] = useState<GamePhase>('lobby');
-  const [joinId, setJoinId] = useState('');
+  const [joinId, setJoinId] = useState(initialJoinId);
   const [playerName, setPlayerName] = useState('');
+
+  // Generate join URL for QR code
+  const getJoinUrl = useCallback((id: string) => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/coop?join=${id}`;
+  }, []);
 
   const {
     peerId,
@@ -158,9 +187,31 @@ export default function CoopPage() {
           </CardHeader>
           <CardContent className="space-y-6 text-center">
             {isHost && peerId && (
-              <div className="p-4 bg-white/10 rounded-lg">
-                <p className="text-3xl font-mono text-green-400 select-all">{peerId}</p>
-                <p className="text-gray-400 text-sm mt-2">Les autres joueurs entrent ce code</p>
+              <div className="space-y-4">
+                {/* QR Code - scan to join */}
+                <div className="flex justify-center">
+                  <div className="p-3 bg-white rounded-xl">
+                    <QRCodeSVG
+                      value={getJoinUrl(peerId)}
+                      size={160}
+                      level="M"
+                      includeMargin={false}
+                    />
+                  </div>
+                </div>
+                <p className="text-gray-400 text-sm">Scanne pour rejoindre</p>
+
+                {/* Fallback: show code */}
+                <details className="text-left">
+                  <summary className="text-gray-500 text-xs cursor-pointer hover:text-gray-300">
+                    Ou entre le code manuellement
+                  </summary>
+                  <div className="mt-2 p-2 bg-white/10 rounded text-center">
+                    <p className="text-sm font-mono text-green-400 select-all break-all">
+                      {peerId}
+                    </p>
+                  </div>
+                </details>
               </div>
             )}
 
