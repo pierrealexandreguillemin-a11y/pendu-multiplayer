@@ -23,28 +23,22 @@ export default function SoloPage() {
 
   // Calculate score when game ends
   const score = gameState?.status === 'won' ? calculateScore(gameState.word) : 0;
+  const gameEnded = gameState?.status === 'won' || gameState?.status === 'lost';
 
-  // Record score when game is won
+  // Record score when game ends (victory or defeat)
   useEffect(() => {
-    if (gameState?.status === 'won' && playerName && !hasRecordedRef.current) {
+    if (gameEnded && playerName && !hasRecordedRef.current && gameState) {
       hasRecordedRef.current = true;
       addEntry({
         playerName,
         mode: 'solo',
-        score: calculateScore(gameState.word),
+        score: gameState.status === 'won' ? calculateScore(gameState.word) : 0,
         word: gameState.originalWord,
         errors: gameState.errors,
-        won: true,
+        won: gameState.status === 'won',
       });
     }
-  }, [
-    gameState?.status,
-    gameState?.word,
-    gameState?.originalWord,
-    gameState?.errors,
-    playerName,
-    addEntry,
-  ]);
+  }, [gameEnded, gameState, playerName, addEntry]);
 
   // Reset recorded flag when starting new game
   const handleStartGame = () => {

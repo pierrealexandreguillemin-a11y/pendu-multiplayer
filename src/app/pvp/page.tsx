@@ -73,29 +73,22 @@ function PvPContent() {
 
   // Calculate score (only for guessers, not host)
   const score = gameState?.status === 'won' && !isHost ? calculateScore(gameState.word) : 0;
+  const gameEnded = gameState?.status === 'won' || gameState?.status === 'lost';
 
-  // Record score when guesser wins
+  // Record score when guesser's game ends (victory or defeat)
   useEffect(() => {
-    if (gameState?.status === 'won' && !isHost && playerName && !hasRecordedRef.current) {
+    if (gameEnded && !isHost && playerName && !hasRecordedRef.current && gameState) {
       hasRecordedRef.current = true;
       addEntry({
         playerName,
         mode: 'pvp',
-        score: calculateScore(gameState.word),
+        score: gameState.status === 'won' ? calculateScore(gameState.word) : 0,
         word: gameState.originalWord,
         errors: gameState.errors,
-        won: true,
+        won: gameState.status === 'won',
       });
     }
-  }, [
-    gameState?.status,
-    gameState?.word,
-    gameState?.originalWord,
-    gameState?.errors,
-    isHost,
-    playerName,
-    addEntry,
-  ]);
+  }, [gameEnded, gameState, isHost, playerName, addEntry]);
 
   // Handle incoming messages
   useEffect(() => {
