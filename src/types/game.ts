@@ -109,3 +109,49 @@ export interface GameConfig {
   word: string;
   category?: string;
 }
+
+// ============================================================================
+// MULTIPLAYER MESSAGES (ISO/IEC 5055 - Discriminated Unions for type safety)
+// ============================================================================
+
+/** Message: Start game with word and category */
+export interface StartGameMessage {
+  type: 'start';
+  payload: {
+    word: string;
+    category: string;
+  };
+}
+
+/** Message: Player guessed a letter */
+export interface GuessMessage {
+  type: 'guess';
+  payload: {
+    letter: Letter;
+  };
+}
+
+/** Message: Sync game state from host */
+export interface StateMessage {
+  type: 'state';
+  payload: {
+    word: string;
+    category: string;
+    correctLetters: Letter[];
+    wrongLetters: Letter[];
+    errors: number;
+    status: GameStatus;
+  };
+}
+
+/** Message: Restart game */
+export interface RestartMessage {
+  type: 'restart';
+  payload: Record<string, never>;
+}
+
+/** All possible game messages (discriminated union) */
+export type GameMessage = StartGameMessage | GuessMessage | StateMessage | RestartMessage;
+
+/** Connection status for multiplayer */
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
