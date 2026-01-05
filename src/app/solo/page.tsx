@@ -1,16 +1,61 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { HangmanDrawing } from '@/components/game/HangmanDrawing';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
+import { Leaderboard } from '@/components/game/Leaderboard';
 import { GlassCard } from '@/components/effects/glass-card';
 import { PageTransition } from '@/components/effects/page-transition';
+import { Input } from '@/components/ui/input';
+import { calculateScore } from '@/lib/game-engine';
+import { useLeaderboardStore } from '@/stores/leaderboard';
 import Link from 'next/link';
 
 export default function SoloPage() {
   const { gameState, displayWord, isPlaying, startGame, guess, reset } = useGameLogic();
+  const [playerName, setPlayerName] = useState('');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const { addEntry } = useLeaderboardStore();
+  const hasRecordedRef = useRef(false);
+
+  // Calculate score when game ends
+  const score = gameState?.status === 'won' ? calculateScore(gameState.word) : 0;
+
+  // Record score when game is won
+  useEffect(() => {
+    if (gameState?.status === 'won' && playerName && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+      addEntry({
+        playerName,
+        mode: 'solo',
+        score: calculateScore(gameState.word),
+        word: gameState.originalWord,
+        errors: gameState.errors,
+        won: true,
+      });
+    }
+  }, [
+    gameState?.status,
+    gameState?.word,
+    gameState?.originalWord,
+    gameState?.errors,
+    playerName,
+    addEntry,
+  ]);
+
+  // Reset recorded flag when starting new game
+  const handleStartGame = () => {
+    hasRecordedRef.current = false;
+    startGame();
+  };
+
+  const handleReset = () => {
+    hasRecordedRef.current = false;
+    reset();
+  };
 
   // Initial state - show start button
   if (!gameState) {
@@ -23,23 +68,47 @@ export default function SoloPage() {
           >
             <h1 className="text-3xl sm:text-4xl font-bold text-white mb-6">Mode Solo</h1>
 
-            <p className="text-gray-300 mb-8">
+            <p className="text-gray-300 mb-6">
               Trouve le mot mystère avant que le pendu ne soit complet ! Tu as 6 essais.
             </p>
 
-            <button
-              onClick={() => startGame()}
-              className="
-                w-full py-4 px-6
-                bg-blue-500 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30
-                text-white text-xl font-semibold
-                rounded-xl
-                transition-all duration-200 hover:scale-[1.02]
-                focus:outline-none focus:ring-4 focus:ring-blue-500/50
-              "
-            >
-              Commencer
-            </button>
+            <div className="space-y-4">
+              <Input
+                placeholder="Ton pseudo"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 text-center"
+              />
+
+              <button
+                onClick={handleStartGame}
+                disabled={!playerName.trim()}
+                className="
+                  w-full py-4 px-6
+                  bg-blue-500 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30
+                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                  text-white text-xl font-semibold
+                  rounded-xl
+                  transition-all duration-200 hover:scale-[1.02]
+                  focus:outline-none focus:ring-4 focus:ring-blue-500/50
+                "
+              >
+                Commencer
+              </button>
+
+              <button
+                onClick={() => setShowLeaderboard(true)}
+                className="
+                  w-full py-3 px-6
+                  bg-yellow-500/20 hover:bg-yellow-500/30
+                  text-yellow-400 font-semibold
+                  rounded-xl
+                  transition-all duration-200
+                "
+              >
+                Voir le classement
+              </button>
+            </div>
 
             <Link
               href="/"
@@ -52,6 +121,14 @@ export default function SoloPage() {
             </Link>
           </GlassCard>
         </PageTransition>
+
+        {showLeaderboard && (
+          <Leaderboard
+            mode="solo"
+            onClose={() => setShowLeaderboard(false)}
+            spotlightColor="rgba(59, 130, 246, 0.15)"
+          />
+        )}
       </main>
     );
   }
@@ -68,9 +145,7 @@ export default function SoloPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-white">Mode Solo</h1>
-          <Link href="/" className="text-gray-400 hover:text-white text-sm">
-            Menu
-          </Link>
+          <span className="text-blue-400 text-sm">{playerName}</span>
         </div>
 
         {/* Game Status */}
@@ -79,8 +154,10 @@ export default function SoloPage() {
             status={gameState.status}
             errors={gameState.errors}
             category={gameState.category}
-            onPlayAgain={() => startGame()}
-            onBackToMenu={reset}
+            score={score}
+            onPlayAgain={handleStartGame}
+            onBackToMenu={handleReset}
+            onShowLeaderboard={() => setShowLeaderboard(true)}
           />
         </div>
 
@@ -117,6 +194,14 @@ export default function SoloPage() {
           </p>
         )}
       </GlassCard>
+
+      {showLeaderboard && (
+        <Leaderboard
+          mode="solo"
+          onClose={() => setShowLeaderboard(false)}
+          spotlightColor="rgba(59, 130, 246, 0.15)"
+        />
+      )}
     </main>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
@@ -9,10 +9,13 @@ import { HangmanDrawing } from '@/components/game/HangmanDrawing';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
+import { Leaderboard } from '@/components/game/Leaderboard';
 import { GlassCard } from '@/components/effects/glass-card';
 import { PageTransition } from '@/components/effects/page-transition';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { calculateScore } from '@/lib/game-engine';
+import { useLeaderboardStore } from '@/stores/leaderboard';
 import type { Letter } from '@/types/game';
 import Link from 'next/link';
 
@@ -64,6 +67,35 @@ function PvPContent() {
   } = usePeerConnection();
 
   const { gameState, displayWord, startGame, guess } = useGameLogic();
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const { addEntry } = useLeaderboardStore();
+  const hasRecordedRef = useRef(false);
+
+  // Calculate score (only for guessers, not host)
+  const score = gameState?.status === 'won' && !isHost ? calculateScore(gameState.word) : 0;
+
+  // Record score when guesser wins
+  useEffect(() => {
+    if (gameState?.status === 'won' && !isHost && playerName && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+      addEntry({
+        playerName,
+        mode: 'pvp',
+        score: calculateScore(gameState.word),
+        word: gameState.originalWord,
+        errors: gameState.errors,
+        won: true,
+      });
+    }
+  }, [
+    gameState?.status,
+    gameState?.word,
+    gameState?.originalWord,
+    gameState?.errors,
+    isHost,
+    playerName,
+    addEntry,
+  ]);
 
   // Handle incoming messages
   useEffect(() => {
@@ -133,6 +165,7 @@ function PvPContent() {
   }, [disconnect, router]);
 
   const handlePlayAgain = () => {
+    hasRecordedRef.current = false;
     setCustomWord('');
     setCustomCategory('');
     setPhase('word-input');
@@ -330,8 +363,10 @@ function PvPContent() {
           status={gameState.status}
           errors={gameState.errors}
           category={gameState.category}
+          score={score}
           onPlayAgain={isHost ? handlePlayAgain : undefined}
           onBackToMenu={handleQuit}
+          onShowLeaderboard={() => setShowLeaderboard(true)}
         />
 
         <div className="my-6 text-white">
@@ -360,6 +395,14 @@ function PvPContent() {
           <p className="text-center text-gray-500 text-sm">Attends que les autres devinent...</p>
         )}
       </GlassCard>
+
+      {showLeaderboard && (
+        <Leaderboard
+          mode="pvp"
+          onClose={() => setShowLeaderboard(false)}
+          spotlightColor="rgba(236, 72, 153, 0.15)"
+        />
+      )}
     </main>
   );
 }

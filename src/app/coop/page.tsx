@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
@@ -9,9 +9,12 @@ import { HangmanDrawing } from '@/components/game/HangmanDrawing';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
+import { Leaderboard } from '@/components/game/Leaderboard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { calculateScore } from '@/lib/game-engine';
+import { useLeaderboardStore } from '@/stores/leaderboard';
 import type { Letter } from '@/types/game';
 import Link from 'next/link';
 
@@ -63,6 +66,34 @@ function CoopContent() {
   } = usePeerConnection();
 
   const { gameState, displayWord, startGame, guess } = useGameLogic();
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const { addEntry } = useLeaderboardStore();
+  const hasRecordedRef = useRef(false);
+
+  // Calculate score
+  const score = gameState?.status === 'won' ? calculateScore(gameState.word) : 0;
+
+  // Record score when game is won
+  useEffect(() => {
+    if (gameState?.status === 'won' && playerName && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+      addEntry({
+        playerName,
+        mode: 'coop',
+        score: calculateScore(gameState.word),
+        word: gameState.originalWord,
+        errors: gameState.errors,
+        won: true,
+      });
+    }
+  }, [
+    gameState?.status,
+    gameState?.word,
+    gameState?.originalWord,
+    gameState?.errors,
+    playerName,
+    addEntry,
+  ]);
 
   // Handle incoming messages (type-safe via discriminated unions)
   useEffect(() => {
@@ -101,6 +132,7 @@ function CoopContent() {
   };
 
   const handleStartGame = () => {
+    hasRecordedRef.current = false;
     startGame();
     // Note: startGame() updates gameState asynchronously,
     // so we need to send message after state update
@@ -267,11 +299,14 @@ function CoopContent() {
           status={gameState.status}
           errors={gameState.errors}
           category={gameState.category}
+          score={score}
           onPlayAgain={() => {
+            hasRecordedRef.current = false;
             startGame();
             sendMessage({ type: 'restart', payload: {} });
           }}
           onBackToMenu={handleQuit}
+          onShowLeaderboard={() => setShowLeaderboard(true)}
         />
 
         <div className="my-6 text-white">
@@ -294,6 +329,14 @@ function CoopContent() {
           />
         )}
       </div>
+
+      {showLeaderboard && (
+        <Leaderboard
+          mode="coop"
+          onClose={() => setShowLeaderboard(false)}
+          spotlightColor="rgba(74, 222, 128, 0.15)"
+        />
+      )}
     </main>
   );
 }
