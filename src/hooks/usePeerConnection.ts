@@ -2,13 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Peer, { DataConnection } from 'peerjs';
-
-type GameMessage = {
-  type: 'guess' | 'state' | 'start' | 'restart';
-  payload: unknown;
-};
-
-type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+import type { GameMessage, ConnectionStatus } from '@/types/game';
+import { safeValidateGameMessage } from '@/lib/message-validation';
 
 interface UsePeerConnectionReturn {
   peerId: string | null;
@@ -43,7 +38,12 @@ export function usePeerConnection(): UsePeerConnectionReturn {
 
     conn.on('data', (data) => {
       if (messageHandlerRef.current) {
-        messageHandlerRef.current(data as GameMessage, conn.peer);
+        const validatedMessage = safeValidateGameMessage(data);
+        if (validatedMessage) {
+          messageHandlerRef.current(validatedMessage, conn.peer);
+        } else {
+          console.warn('[PeerConnection] Invalid message received:', data);
+        }
       }
     });
 
