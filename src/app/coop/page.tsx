@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
@@ -35,6 +35,7 @@ export default function CoopPage() {
 /** Actual coop game content */
 function CoopContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Initialize joinId from URL query param (from QR code scan)
   const initialJoinId = searchParams.get('join') ?? '';
@@ -123,6 +124,12 @@ function CoopContent() {
     },
     [guess, sendMessage]
   );
+
+  // Quit game and return to home
+  const handleQuit = useCallback(() => {
+    disconnect();
+    router.push('/');
+  }, [disconnect, router]);
 
   // Lobby Phase
   if (phase === 'lobby') {
@@ -230,7 +237,7 @@ function CoopContent() {
               </Button>
             )}
 
-            <Button onClick={disconnect} variant="destructive" size="sm">
+            <Button onClick={handleQuit} variant="destructive" size="sm">
               Quitter
             </Button>
           </CardContent>
@@ -264,7 +271,7 @@ function CoopContent() {
             startGame();
             sendMessage({ type: 'restart', payload: {} });
           }}
-          onBackToMenu={disconnect}
+          onBackToMenu={handleQuit}
         />
 
         <div className="my-6 text-white">
