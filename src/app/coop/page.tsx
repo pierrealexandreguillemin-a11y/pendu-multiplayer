@@ -34,18 +34,26 @@ export default function CoopPage() {
 
   const { gameState, displayWord, startGame, guess } = useGameLogic();
 
-  // Handle incoming messages
+  // Handle incoming messages (type-safe via discriminated unions)
   useEffect(() => {
     onMessage((message) => {
-      if (message.type === 'start' && !isHost) {
-        const { word, category } = message.payload as { word: string; category: string };
-        startGame(word, category);
-        setPhase('playing');
-      } else if (message.type === 'guess') {
-        const { letter } = message.payload as { letter: Letter };
-        guess(letter);
-      } else if (message.type === 'state' && !isHost) {
-        // Sync state from host
+      switch (message.type) {
+        case 'start':
+          if (!isHost) {
+            startGame(message.payload.word, message.payload.category);
+            setPhase('playing');
+          }
+          break;
+        case 'guess':
+          guess(message.payload.letter);
+          break;
+        case 'state':
+          // TODO: Sync state from host for late joiners
+          break;
+        case 'restart':
+          startGame();
+          setPhase('playing');
+          break;
       }
     });
   }, [onMessage, isHost, startGame, guess]);
@@ -64,14 +72,20 @@ export default function CoopPage() {
 
   const handleStartGame = () => {
     startGame();
-    if (gameState) {
-      sendMessage({
-        type: 'start',
-        payload: { word: gameState.word, category: gameState.category },
-      });
-    }
+    // Note: startGame() updates gameState asynchronously,
+    // so we need to send message after state update
     setPhase('playing');
   };
+
+  // Send start message when game starts as host
+  useEffect(() => {
+    if (isHost && phase === 'playing' && gameState) {
+      sendMessage({
+        type: 'start',
+        payload: { word: gameState.word, category: gameState.category ?? '' },
+      });
+    }
+  }, [isHost, phase, gameState, sendMessage]);
 
   const handleGuess = useCallback(
     (letter: Letter) => {
