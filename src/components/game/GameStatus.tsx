@@ -8,6 +8,7 @@ interface GameStatusProps {
   errors: number;
   category?: string;
   score?: number;
+  sessionScore?: number;
   onPlayAgain?: () => void;
   onBackToMenu?: () => void;
   onShowLeaderboard?: () => void;
@@ -21,6 +22,7 @@ export function GameStatus({
   errors,
   category,
   score,
+  sessionScore,
   onPlayAgain,
   onBackToMenu,
   onShowLeaderboard,
@@ -72,47 +74,66 @@ export function GameStatus({
       </p>
 
       {/* Score display */}
-      {score !== undefined && score > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🏆</span>
-          <span className="text-xl font-bold text-yellow-600">+{score} points</span>
+      {score !== undefined && (
+        <div className="flex flex-col items-center gap-1">
+          {isWin ? (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🏆</span>
+                <span className="text-xl font-bold text-yellow-600">+{score} points</span>
+              </div>
+              {sessionScore !== undefined && sessionScore > 0 && (
+                <span className="text-sm text-gray-500">Total session: {sessionScore + score}</span>
+              )}
+            </>
+          ) : (
+            <div className="text-center">
+              <span className="text-2xl block mb-1">💀</span>
+              <span className="text-xl font-bold text-red-400">GAME OVER</span>
+              {sessionScore !== undefined && (
+                <p className="text-lg text-gray-300 mt-1">
+                  Score final: <span className="text-yellow-400 font-bold">{sessionScore}</span>{' '}
+                  points
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 mt-2">
-        {onPlayAgain && (
+        {/* GAME OVER (defeat): only back to menu - arcade style */}
+        {!isWin && onBackToMenu && (
+          <button
+            onClick={onBackToMenu}
+            className="
+              px-6 py-3 rounded-lg font-semibold
+              bg-red-500 hover:bg-red-600 text-white
+              transition-all duration-150
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
+            "
+          >
+            Retour accueil
+          </button>
+        )}
+
+        {/* Victory: can play again */}
+        {isWin && onPlayAgain && (
           <button
             onClick={onPlayAgain}
-            className={`
+            className="
               px-6 py-3 rounded-lg font-semibold
+              bg-green-500 hover:bg-green-600 text-white
               transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2
-              ${
-                isWin
-                  ? 'bg-green-500 hover:bg-green-600 text-white focus:ring-green-500'
-                  : 'bg-red-500 hover:bg-red-600 text-white focus:ring-red-500'
-              }
-            `}
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
+            "
           >
             Rejouer
           </button>
         )}
 
-        {onBackToMenu && (
-          <button
-            onClick={onBackToMenu}
-            className="
-              px-6 py-3 rounded-lg font-semibold
-              bg-gray-200 hover:bg-gray-300 text-gray-700
-              transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
-            "
-          >
-            Menu
-          </button>
-        )}
-
-        {onShowLeaderboard && (
+        {/* Victory: can see leaderboard */}
+        {isWin && onShowLeaderboard && (
           <button
             onClick={onShowLeaderboard}
             className="
@@ -123,6 +144,21 @@ export function GameStatus({
             "
           >
             Classement
+          </button>
+        )}
+
+        {/* Victory: optional back to menu */}
+        {isWin && onBackToMenu && (
+          <button
+            onClick={onBackToMenu}
+            className="
+              px-6 py-3 rounded-lg font-semibold
+              bg-gray-200 hover:bg-gray-300 text-gray-700
+              transition-all duration-150
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+            "
+          >
+            Menu
           </button>
         )}
       </div>
