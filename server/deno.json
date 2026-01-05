@@ -1,0 +1,9 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --watch signaling.ts",
+    "start": "deno run --allow-net signaling.ts"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}
