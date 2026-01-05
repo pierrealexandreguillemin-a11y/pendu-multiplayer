@@ -1,11 +1,46 @@
 /**
  * Leaderboard Store - Zustand with localStorage persistence
  * APPLICATION LAYER (ISO/IEC 42010)
+ *
+ * Handles localStorage errors gracefully (quota exceeded, disabled, etc.)
  */
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { LeaderboardEntry, GameMode } from '@/types/game';
+
+/**
+ * Safe localStorage wrapper - handles errors gracefully
+ * ISO/IEC 5055 - Error handling at system boundaries
+ */
+const safeStorage: StateStorage = {
+  getItem: (name: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(name);
+    } catch (error) {
+      console.warn('[Leaderboard] localStorage read error:', error);
+      return null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(name, value);
+    } catch (error) {
+      // QuotaExceededError or SecurityError
+      console.warn('[Leaderboard] localStorage write error:', error);
+    }
+  },
+  removeItem: (name: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(name);
+    } catch (error) {
+      console.warn('[Leaderboard] localStorage remove error:', error);
+    }
+  },
+};
 
 /** Maximum entries per mode */
 const MAX_ENTRIES_PER_MODE = 10;
@@ -94,6 +129,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
     }),
     {
       name: 'pendu-leaderboard',
+      storage: createJSONStorage(() => safeStorage),
     }
   )
 );
