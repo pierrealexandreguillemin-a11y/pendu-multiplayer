@@ -11,6 +11,7 @@ import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useLeaderboardStore } from '@/stores/leaderboard';
 import { calculateScore } from '@/lib/game-engine';
+import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import type { Letter, GameMessage } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
 
@@ -70,7 +71,11 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     currentTurnIndexRef.current = currentTurnIndex;
   }, [currentTurnIndex]);
 
-  const wordScore = game.gameState ? calculateScore(game.gameState.word) : 0;
+  // ISO/IEC 25010 - Apply difficulty multiplier to displayed word score
+  const difficulty = game.gameState?.difficulty ?? 'normal';
+  const wordScore = game.gameState
+    ? calculateDifficultyScore(calculateScore(game.gameState.word), difficulty)
+    : 0;
 
   // Get current player whose turn it is
   const currentPlayer = players[currentTurnIndex] ?? null;
@@ -272,10 +277,14 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     setPhase('playing');
   }, [game]);
 
+  // ISO/IEC 25010 - Apply difficulty multiplier to score
   const continueSession = useCallback(() => {
     const currentWord = game.gameState?.word;
+    const currentDifficulty = game.gameState?.difficulty ?? 'normal';
     if (currentWord) {
-      setSessionScore((prev) => prev + calculateScore(currentWord));
+      const baseScore = calculateScore(currentWord);
+      const finalScore = calculateDifficultyScore(baseScore, currentDifficulty);
+      setSessionScore((prev) => prev + finalScore);
       setWordsWon((prev) => prev + 1);
     }
     hasRecordedRef.current = false;
@@ -320,6 +329,7 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     // Peer state
     peerId: peer.peerId,
     status: peer.status,
+    error: peer.error,
     isHost: peer.isHost,
     connectedPeers: peer.connectedPeers,
 

@@ -42,6 +42,8 @@ function PvPContent() {
         <PvPLobby
           playerName={playerName}
           joinId={session.joinId}
+          isConnecting={session.status === 'connecting'}
+          error={session.error}
           onPlayerNameChange={setPlayerName}
           onJoinIdChange={session.setJoinId}
           onCreateRoom={session.createRoom}

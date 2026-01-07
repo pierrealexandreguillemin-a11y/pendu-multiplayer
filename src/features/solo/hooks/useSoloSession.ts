@@ -12,6 +12,7 @@ import { useLeaderboardStore } from '@/stores/leaderboard';
 import { useSessionMemory } from '@/hooks/useSessionMemory';
 import { useDifficultyStore, useDifficultyConfig } from '@/stores/difficulty';
 import { calculateScore } from '@/lib/game-engine';
+import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import { getRandomWordByDifficulty } from '@/lib/words-difficulty';
 
 interface UseSoloSessionOptions {
@@ -29,7 +30,10 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
   const [wordsWon, setWordsWon] = useState(0);
   const hasRecordedRef = useRef(false);
 
-  const wordScore = gameState ? calculateScore(gameState.word) : 0;
+  // ISO/IEC 25010 - Apply difficulty multiplier to displayed word score
+  const wordScore = gameState
+    ? calculateDifficultyScore(calculateScore(gameState.word), difficulty)
+    : 0;
 
   // Record on DEFEAT (GAME OVER)
   useEffect(() => {
@@ -73,9 +77,12 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
   }, [startGame, sessionMemory, difficulty]);
 
   // Continue session with next word
+  // ISO/IEC 25010 - Functional Suitability: Apply difficulty multiplier to score
   const continueSession = useCallback(() => {
     if (gameState) {
-      setSessionScore((prev) => prev + calculateScore(gameState.word));
+      const baseScore = calculateScore(gameState.word);
+      const finalScore = calculateDifficultyScore(baseScore, difficulty);
+      setSessionScore((prev) => prev + finalScore);
       setWordsWon((prev) => prev + 1);
     }
 
