@@ -189,25 +189,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # DEPLOY: Vercel Preview (PR) / Production (main)
+  # NOTE: Deployment is handled by Vercel's native GitHub integration
+  # This provides automatic Preview Deployments on PRs and Production on main
+  # No additional CI deploy step needed - Vercel watches the repo directly
   # ============================================================================
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    needs: [build, security]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        id: deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
