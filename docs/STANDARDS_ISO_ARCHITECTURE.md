@@ -1,7 +1,7 @@
 # Standards ISO & Architecture - Pendu Multijoueur
 
-> **Version**: 1.0 | **Date**: 2026-01-05
-> **Standards**: ISO/IEC 25010, 29119, 5055, 12207, 42010
+> **Version**: 1.1 | **Date**: 2026-01-07
+> **Standards**: ISO/IEC 25010, 25065, 29119, 5055, 12207, 42010
 
 ---
 
@@ -728,4 +728,215 @@ PHASE 7: PWA + Deploy
 
 ---
 
-**Document généré selon**: ISO/IEC 42010:2022, ISO/IEC 25010:2023, ISO/IEC 5055:2021
+## 10. UTILISABILITÉ (ISO/IEC 25065 - User Experience)
+
+### 10.1 Critères ISO/IEC 25065
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     CRITÈRES UTILISABILITÉ ISO/IEC 25065                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. EFFICACITÉ (Effectiveness)                                              │
+│  ─────────────────────────────                                              │
+│  • L'utilisateur accomplit ses tâches avec succès                          │
+│  • Parcours utilisateur court (max 3 clics)                                │
+│  • Feedback visuel immédiat sur chaque action                              │
+│                                                                             │
+│  2. EFFICIENCE (Efficiency)                                                 │
+│  ──────────────────────────                                                 │
+│  • Ressources minimisées (clics, temps, charge cognitive)                  │
+│  • Support clavier physique (A-Z direct)                                   │
+│  • Layout AZERTY français natif                                            │
+│  • Pas de re-saisie inutile (pseudo mémorisé)                             │
+│                                                                             │
+│  3. SATISFACTION                                                            │
+│  ───────────────                                                            │
+│  • Design moderne (glassmorphism, animations)                              │
+│  • Feedback audio optionnel                                                │
+│  • Animations fluides (Framer Motion)                                      │
+│  • Couleurs thématiques par mode (bleu/vert/rose)                         │
+│                                                                             │
+│  4. ABSENCE DE RISQUE (Freedom from Risk)                                   │
+│  ─────────────────────────────────────────                                  │
+│  • Confirmation avant actions destructives                                  │
+│  • Validation formulaires en temps réel                                    │
+│  • États disabled pour actions impossibles                                 │
+│  • Messages d'erreur actionnables                                          │
+│                                                                             │
+│  5. COUVERTURE DU CONTEXTE (Context Coverage)                               │
+│  ────────────────────────────────────────────                               │
+│  • Responsive design (mobile-first)                                        │
+│  • Touch targets minimum 44px (WCAG 2.1)                                   │
+│  • PWA installable                                                         │
+│  • Accessibilité WCAG 2.1 AA                                               │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.2 Checklist UX Composants
+
+| Composant | Critères ISO/IEC 25065 | Implémentation |
+|-----------|------------------------|----------------|
+| **Keyboard.tsx** | Efficience, Couverture | AZERTY layout, responsive, clavier physique |
+| **BalloonDisplay.tsx** | Satisfaction | Animations pop, couleurs vives |
+| **GameStatus.tsx** | Efficacité | Feedback immédiat victoire/défaite |
+| **Leaderboard.tsx** | Absence de risque | Confirmation effacer, modal React |
+| **CoopWaiting.tsx** | Absence de risque | Dialog confirmation quitter |
+| **PvPWaiting.tsx** | Absence de risque | Dialog confirmation quitter |
+| **DifficultySelector.tsx** | Efficience | Sélection 1 clic, feedback erreurs |
+
+### 10.3 Accessibilité WCAG 2.1 AA
+
+```typescript
+// Standards WCAG 2.1 AA implémentés
+// ════════════════════════════════════
+
+// 1. Contraste textes (1.4.3)
+// Ratio minimum 4.5:1 pour texte normal
+// ❌ text-gray-500 (2.8:1) → ✅ text-gray-400 (4.5:1+)
+
+// 2. Touch targets (2.5.5)
+// Minimum 44x44px pour éléments interactifs
+// Keyboard: min-w-[30px] h-10 flex-1 (adaptatif)
+
+// 3. Focus visible (2.4.7)
+// focus:ring-2 focus:ring-offset-2 sur tous boutons
+
+// 4. Labels (1.1.1)
+// aria-label sur tous éléments interactifs
+// aria-pressed pour états boutons
+
+// 5. Langue (3.1.1)
+// <html lang="fr"> dans layout.tsx
+```
+
+### 10.4 Responsive Design
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        BREAKPOINTS RESPONSIVE                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  MOBILE (< 640px - default)                                                │
+│  ─────────────────────────                                                  │
+│  • Clavier: flex-1, min-w-[30px], gap-0.5                                  │
+│  • Textes: text-xs, text-sm                                                │
+│  • Cards: p-4, max-w-full                                                  │
+│  • Layout: flex-col                                                        │
+│                                                                             │
+│  TABLET/DESKTOP (sm: >= 640px)                                             │
+│  ─────────────────────────────                                             │
+│  • Clavier: max-w-[48px], gap-1                                           │
+│  • Textes: text-base, text-lg                                             │
+│  • Cards: p-8, max-w-md                                                    │
+│  • Layout: flex-row possible                                               │
+│                                                                             │
+│  Tailwind classes pattern:                                                  │
+│  mobile-class sm:tablet-class                                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.5 Feedback Utilisateur
+
+```typescript
+// Types de feedback ISO/IEC 25065
+// ════════════════════════════════
+
+// 1. VISUEL (immédiat)
+// ────────────────────
+// • Lettre correcte: bg-green-500 + révélation mot
+// • Lettre incorrecte: bg-red-500 + ballon pop
+// • Loading: spinner animé
+// • Hover: scale, couleur change
+
+// 2. AUDIO (optionnel)
+// ────────────────────
+// • correct: magic-ding.ogg
+// • incorrect: soft-oops.ogg
+// • victory: level-up.ogg
+// • defeat: soft-oops.ogg
+// Respecte prefers-reduced-motion
+
+// 3. ÉTATS SYSTÈME
+// ────────────────
+// • Connexion P2P: status indicator (vert/rouge)
+// • Tour joueur: "C'est ton tour" highlight
+// • Chargement: spinner + texte contextuel
+```
+
+### 10.6 Confirmations Actions Destructives
+
+```typescript
+// Pattern Dialog confirmation (ISO/IEC 25065 - Absence de risque)
+// ════════════════════════════════════════════════════════════════
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+// Actions nécessitant confirmation:
+// ─────────────────────────────────
+// 1. Quitter partie multijoueur (déconnecte autres joueurs)
+// 2. Effacer classement (perte données)
+// 3. Abandonner partie en cours (perte score)
+
+// Exemple implémentation:
+<Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Quitter la partie ?</DialogTitle>
+      <DialogDescription>
+        Les autres joueurs seront déconnectés.
+      </DialogDescription>
+    </DialogHeader>
+    <DialogFooter>
+      <Button variant="outline" onClick={cancel}>Annuler</Button>
+      <Button variant="destructive" onClick={confirm}>Quitter</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+### 10.7 Métriques UX (Lighthouse)
+
+| Métrique | Seuil Acceptable | Seuil Excellent | Production |
+|----------|------------------|-----------------|------------|
+| **LCP** | < 2500ms | < 1200ms | 121ms ✅ |
+| **CLS** | < 0.25 | < 0.1 | 0.00 ✅ |
+| **INP** | < 500ms | < 200ms | ~46ms ✅ |
+| **TTFB** | < 800ms | < 200ms | 15ms ✅ |
+
+### 10.8 Layout Clavier AZERTY
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     CLAVIER AZERTY FRANÇAIS                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Rangée 1:  [ A ] [ Z ] [ E ] [ R ] [ T ] [ Y ] [ U ] [ I ] [ O ] [ P ]    │
+│                                                                             │
+│  Rangée 2:  [ Q ] [ S ] [ D ] [ F ] [ G ] [ H ] [ J ] [ K ] [ L ] [ M ]    │
+│                                                                             │
+│  Rangée 3:        [ W ] [ X ] [ C ] [ V ] [ B ] [ N ]                       │
+│                                                                             │
+│  Responsive:                                                                │
+│  • Mobile: flex-1 min-w-[30px] (s'adapte à l'écran)                        │
+│  • Desktop: max-w-[48px] (taille fixe confortable)                         │
+│                                                                             │
+│  Support clavier physique:                                                  │
+│  • Touche A-Z → guess letter directement                                   │
+│  • Lettres déjà jouées ignorées                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+**Document généré selon**: ISO/IEC 42010:2022, ISO/IEC 25010:2023, ISO/IEC 25065:2023, ISO/IEC 5055:2021

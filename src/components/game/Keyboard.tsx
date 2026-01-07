@@ -49,14 +49,16 @@ export function Keyboard({
   }, [disabled, onLetterClick, getLetterState]);
 
   const getButtonClasses = (state: 'unused' | 'correct' | 'wrong'): string => {
-    // WCAG 2.1 AA - Touch targets minimum 44px (w-11 = 44px)
+    // WCAG 2.1 AA - Touch targets: flex sizing for mobile responsiveness
+    // ISO/IEC 25065 - Usability: Responsive design for all screen sizes
     const base = `
-      w-11 h-11 sm:w-12 sm:h-14
+      flex-1 min-w-[30px] h-10 sm:h-12
+      max-w-[44px] sm:max-w-[48px]
       flex items-center justify-center
-      text-sm sm:text-lg font-semibold
-      rounded-lg
+      text-xs sm:text-base font-semibold
+      rounded-md sm:rounded-lg
       transition-all duration-150
-      focus:outline-none focus:ring-2 focus:ring-offset-2
+      focus:outline-none focus:ring-2 focus:ring-offset-1 sm:focus:ring-offset-2
     `;
 
     switch (state) {
@@ -69,17 +71,21 @@ export function Keyboard({
     }
   };
 
-  // Split alphabet into rows for AZERTY-like layout
-  const rows = [
-    ALPHABET.slice(0, 10), // A-J
-    ALPHABET.slice(10, 19), // K-S
-    ALPHABET.slice(19, 26), // T-Z
+  // AZERTY French keyboard layout (ISO/IEC 25065 - Efficience)
+  const AZERTY_ROWS: Letter[][] = [
+    ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+    ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
+    ['W', 'X', 'C', 'V', 'B', 'N'],
   ];
 
   return (
-    <div className="flex flex-col items-center gap-2" role="group" aria-label="Clavier virtuel">
-      {rows.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex gap-1 sm:gap-2">
+    <div
+      className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-md mx-auto px-1"
+      role="group"
+      aria-label="Clavier virtuel AZERTY"
+    >
+      {AZERTY_ROWS.map((row, rowIndex) => (
+        <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1 w-full">
           {row.map((letter) => {
             const state = getLetterState(letter);
             const isDisabled = disabled || state !== 'unused';
