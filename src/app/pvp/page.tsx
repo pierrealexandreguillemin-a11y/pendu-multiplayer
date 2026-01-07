@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePvPSession, PvPLobby, PvPWaiting, PvPWordInput, PvPGame } from '@/features/pvp';
 import { Leaderboard } from '@/components/game/Leaderboard';
+import { usePlayerName } from '@/hooks/usePlayerName';
 
 /** PvP Page - Thin orchestrator */
 export default function PvPPage() {
@@ -28,7 +29,8 @@ function Loading() {
 
 function PvPContent() {
   const searchParams = useSearchParams();
-  const [playerName, setPlayerName] = useState('');
+  // ISO/IEC 25010 - Usability: Auto-fill from localStorage
+  const [playerName, setPlayerName] = usePlayerName();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   const session = usePvPSession({

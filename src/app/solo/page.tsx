@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { useSoloSession, SoloStartScreen, SoloGameScreen } from '@/features/solo';
 import { Leaderboard } from '@/components/game/Leaderboard';
+import { usePlayerName } from '@/hooks/usePlayerName';
 
 /** Solo Page - Thin orchestrator */
 export default function SoloPage() {
-  const [playerName, setPlayerName] = useState('');
+  // ISO/IEC 25010 - Usability: Auto-fill from localStorage
+  const [playerName, setPlayerName] = usePlayerName();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const session = useSoloSession({ playerName });
 

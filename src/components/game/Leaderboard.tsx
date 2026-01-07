@@ -5,6 +5,9 @@ import { useLeaderboardStore } from '@/stores/leaderboard';
 import type { GameMode } from '@/types/game';
 import { GlassCard } from '@/components/effects/glass-card';
 
+/** Simple password for clear protection - ISO/IEC 25010 Error Prevention */
+const CLEAR_PASSWORD = 'Papa';
+
 interface LeaderboardProps {
   mode: GameMode;
   onClose: () => void;
@@ -19,6 +22,8 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
   const { getTopScores, clearMode } = useLeaderboardStore();
   const entries = getTopScores(mode, 10);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
 
   const modeLabels: Record<GameMode, string> = {
     solo: 'Solo',
@@ -34,15 +39,25 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
 
   const handleClearClick = () => {
     setShowConfirm(true);
+    setPassword('');
+    setPasswordError(false);
   };
 
   const handleClearConfirm = () => {
-    clearMode(mode);
-    setShowConfirm(false);
+    if (password === CLEAR_PASSWORD) {
+      clearMode(mode);
+      setShowConfirm(false);
+      setPassword('');
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
   };
 
   const handleClearCancel = () => {
     setShowConfirm(false);
+    setPassword('');
+    setPasswordError(false);
   };
 
   return (
@@ -127,16 +142,34 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
           )}
         </div>
 
-        {/* Confirmation modal */}
+        {/* Confirmation modal with password - ISO/IEC 25010 Error Prevention */}
         {showConfirm && (
           <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
             <p className="text-red-300 text-sm mb-3">
               Effacer tous les scores {modeLabels[mode]} ?
             </p>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError(false);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleClearConfirm()}
+              placeholder="Mot de passe"
+              className={`w-full mb-3 px-3 py-2 bg-white/10 border rounded text-white text-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
+                passwordError
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-white/20 focus:ring-red-500/50'
+              }`}
+              autoFocus
+            />
+            {passwordError && <p className="text-red-400 text-xs mb-2">Mot de passe incorrect</p>}
             <div className="flex gap-2">
               <button
                 onClick={handleClearConfirm}
-                className="flex-1 py-2 px-3 bg-red-500 hover:bg-red-600 rounded text-white text-sm font-medium transition-colors"
+                disabled={!password}
+                className="flex-1 py-2 px-3 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-white text-sm font-medium transition-colors"
               >
                 Confirmer
               </button>
