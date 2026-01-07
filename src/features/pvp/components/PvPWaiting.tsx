@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { ConnectionStatus } from '@/types/game';
+import { MAX_PLAYERS } from '@/types/room';
 
 interface PvPWaitingProps {
   peerId: string | null;
@@ -67,8 +68,11 @@ export function PvPWaiting({
         </div>
       )}
 
+      {/* ISO/IEC 25010 - Clear player count with max limit */}
       <div className="text-white mb-6">
-        <p>Joueurs connectés: {connectedPeers.length + 1}</p>
+        <p>
+          Joueurs: {connectedPeers.length + 1}/{MAX_PLAYERS}
+        </p>
         <p className="text-sm text-gray-400">Status: {status}</p>
       </div>
 

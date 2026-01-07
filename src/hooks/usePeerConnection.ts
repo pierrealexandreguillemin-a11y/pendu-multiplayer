@@ -117,8 +117,11 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     [setupConnection]
   );
 
+  // ISO/IEC 25010 - Reliability: Clone connections before iterating to prevent race condition
+  // If a connection closes during iteration, the cloned array remains stable
   const sendMessage = useCallback((message: GameMessage) => {
-    connectionsRef.current.forEach((conn) => {
+    const connections = Array.from(connectionsRef.current.values());
+    connections.forEach((conn) => {
       if (conn.open) {
         conn.send(message);
       }
