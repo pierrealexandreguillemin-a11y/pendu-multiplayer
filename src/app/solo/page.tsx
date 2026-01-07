@@ -27,6 +27,7 @@ export default function SoloPage() {
           sessionScore={session.sessionScore}
           wordsWon={session.wordsWon}
           wordScore={session.wordScore}
+          difficultyConfig={session.difficultyConfig}
           onGuess={session.guess}
           onContinue={session.continueSession}
           onEnd={session.endSession}

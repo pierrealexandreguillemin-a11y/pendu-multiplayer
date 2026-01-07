@@ -5,6 +5,8 @@ import Peer, { DataConnection } from 'peerjs';
 import type { GameMessage, ConnectionStatus } from '@/types/game';
 import { safeValidateGameMessage } from '@/lib/message-validation';
 
+type MessageHandler = (message: GameMessage, fromId: string) => void;
+
 interface UsePeerConnectionReturn {
   peerId: string | null;
   status: ConnectionStatus;
@@ -15,7 +17,8 @@ interface UsePeerConnectionReturn {
   joinRoom: (hostId: string) => Promise<void>;
   sendMessage: (message: GameMessage) => void;
   disconnect: () => void;
-  onMessage: (handler: (message: GameMessage, fromId: string) => void) => void;
+  onMessage: (handler: MessageHandler) => void;
+  offMessage: () => void;
 }
 
 export function usePeerConnection(): UsePeerConnectionReturn {
@@ -133,8 +136,12 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     setIsHost(false);
   }, []);
 
-  const onMessage = useCallback((handler: (message: GameMessage, fromId: string) => void) => {
+  const onMessage = useCallback((handler: MessageHandler) => {
     messageHandlerRef.current = handler;
+  }, []);
+
+  const offMessage = useCallback(() => {
+    messageHandlerRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -154,5 +161,6 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     sendMessage,
     disconnect,
     onMessage,
+    offMessage,
   };
 }

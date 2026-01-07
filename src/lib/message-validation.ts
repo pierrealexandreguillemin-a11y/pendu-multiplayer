@@ -46,12 +46,50 @@ const RestartMessageSchema = z.object({
   payload: z.object({}).strict(),
 });
 
+/** Player join message schema (for 6-player support) */
+const PlayerJoinMessageSchema = z.object({
+  type: z.literal('player_join'),
+  payload: z.object({
+    playerId: z.string().min(1),
+    playerName: z.string().min(1).max(50),
+  }),
+});
+
+/** Players update message schema */
+const PlayersUpdateMessageSchema = z.object({
+  type: z.literal('players_update'),
+  payload: z.object({
+    players: z.array(
+      z.object({
+        id: z.string().min(1),
+        name: z.string().min(1).max(50),
+        isHost: z.boolean(),
+        isReady: z.boolean(),
+        score: z.number().int().min(0),
+      })
+    ),
+    currentTurnIndex: z.number().int().min(0),
+  }),
+});
+
+/** Turn change message schema */
+const TurnChangeMessageSchema = z.object({
+  type: z.literal('turn_change'),
+  payload: z.object({
+    currentTurnIndex: z.number().int().min(0),
+    currentPlayerId: z.string().min(1),
+  }),
+});
+
 /** Combined message schema (discriminated union) */
 export const GameMessageSchema = z.discriminatedUnion('type', [
   StartGameMessageSchema,
   GuessMessageSchema,
   StateMessageSchema,
   RestartMessageSchema,
+  PlayerJoinMessageSchema,
+  PlayersUpdateMessageSchema,
+  TurnChangeMessageSchema,
 ]);
 
 /**

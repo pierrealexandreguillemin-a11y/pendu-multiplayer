@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameState, Letter, DisplayChar } from '@/types/game';
+import type { DifficultyLevel } from '@/types/difficulty';
 import { createGame, guessLetter, getDisplayWord, canGuess } from '@/lib/game-engine';
 import { getRandomWord } from '@/lib/words';
+import { useSound } from '@/hooks/useSound';
 
 interface UseGameLogicReturn {
   /** Current game state */
@@ -12,8 +14,8 @@ interface UseGameLogicReturn {
   displayWord: DisplayChar[];
   /** Whether the game is currently active */
   isPlaying: boolean;
-  /** Start a new game with optional custom word */
-  startGame: (customWord?: string, category?: string) => void;
+  /** Start a new game with optional custom word and difficulty */
+  startGame: (customWord?: string, category?: string, difficulty?: DifficultyLevel) => void;
   /** Guess a letter */
   guess: (letter: Letter) => void;
   /** Check if a letter can be guessed */
@@ -25,22 +27,30 @@ interface UseGameLogicReturn {
 /**
  * Hook for managing hangman game logic
  * Provides clean interface between game engine and React components
+ * ISO/IEC 25010 - Usability: Audio feedback for user actions
  */
 export function useGameLogic(): UseGameLogicReturn {
   const [gameState, setGameState] = useState<GameState | null>(null);
+  const { play } = useSound();
+
+  // Track previous status for victory/defeat sounds
+  const prevStatusRef = useRef<GameState['status'] | null>(null);
 
   const displayWord: DisplayChar[] = gameState ? getDisplayWord(gameState) : [];
 
   const isPlaying = gameState !== null && gameState.status === 'playing';
 
-  const startGame = useCallback((customWord?: string, category?: string) => {
-    if (customWord) {
-      setGameState(createGame({ word: customWord, category }));
-    } else {
-      const { word, category: randomCategory } = getRandomWord();
-      setGameState(createGame({ word, category: randomCategory }));
-    }
-  }, []);
+  const startGame = useCallback(
+    (customWord?: string, category?: string, difficulty?: DifficultyLevel) => {
+      if (customWord) {
+        setGameState(createGame({ word: customWord, category, difficulty }));
+      } else {
+        const { word, category: randomCategory } = getRandomWord();
+        setGameState(createGame({ word, category: randomCategory, difficulty }));
+      }
+    },
+    []
+  );
 
   const guess = useCallback(
     (letter: Letter) => {
@@ -49,9 +59,38 @@ export function useGameLogic(): UseGameLogicReturn {
 
       const result = guessLetter(gameState, letter);
       setGameState(result.state);
+
+      // Play sound based on result
+      if (result.isCorrect) {
+        play('correct');
+      } else {
+        play('incorrect');
+      }
     },
-    [gameState]
+    [gameState, play]
   );
+
+  // Play victory/defeat sounds on game end
+  useEffect(() => {
+    if (!gameState) {
+      prevStatusRef.current = null;
+      return;
+    }
+
+    const prevStatus = prevStatusRef.current;
+    const currentStatus = gameState.status;
+
+    // Only play if status just changed to won/lost
+    if (prevStatus === 'playing') {
+      if (currentStatus === 'won') {
+        play('victory');
+      } else if (currentStatus === 'lost') {
+        play('defeat');
+      }
+    }
+
+    prevStatusRef.current = currentStatus;
+  }, [gameState, play]);
 
   const canGuessLetter = useCallback(
     (letter: Letter): boolean => {

@@ -6,7 +6,11 @@ import { MAX_ERRORS } from '@/types/game';
 interface GameStatusProps {
   status: GameStatusType;
   errors: number;
+  /** Maximum errors allowed (from difficulty config) */
+  maxErrors?: number;
   category?: string;
+  /** Whether to show category hint (difficulty-based) */
+  showCategory?: boolean;
   score?: number;
   sessionScore?: number;
   onPlayAgain?: () => void;
@@ -16,23 +20,26 @@ interface GameStatusProps {
 
 /**
  * Shows game status: playing info or end game result
+ * ISO/IEC 25010 - Usability: Clear feedback with difficulty support
  */
 export function GameStatus({
   status,
   errors,
+  maxErrors = MAX_ERRORS,
   category,
+  showCategory = true,
   score,
   sessionScore,
   onPlayAgain,
   onBackToMenu,
   onShowLeaderboard,
 }: GameStatusProps) {
-  const remainingAttempts = MAX_ERRORS - errors;
+  const remainingAttempts = maxErrors - errors;
 
   if (status === 'playing') {
     return (
       <div className="flex flex-col items-center gap-2 text-center">
-        {category && (
+        {showCategory && category && (
           <p className="text-gray-600">
             Catégorie : <span className="font-semibold text-blue-600">{category}</span>
           </p>
@@ -41,9 +48,9 @@ export function GameStatus({
           Essais restants :{' '}
           <span
             className={`font-bold ${
-              remainingAttempts <= 2
+              remainingAttempts <= Math.ceil(maxErrors * 0.25)
                 ? 'text-red-500'
-                : remainingAttempts <= 4
+                : remainingAttempts <= Math.ceil(maxErrors * 0.5)
                   ? 'text-orange-500'
                   : 'text-green-500'
             }`}

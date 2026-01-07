@@ -1,13 +1,20 @@
 /**
- * Leaderboard Store - Zustand with localStorage persistence
+ * Leaderboard Store - Zustand with localStorage + Cloud persistence
  * APPLICATION LAYER (ISO/IEC 42010)
  *
  * Handles localStorage errors gracefully (quota exceeded, disabled, etc.)
+ * Supports Upstash Redis cloud sync for multi-device leaderboards
  */
 
 import { create } from 'zustand';
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { LeaderboardEntry, GameMode } from '@/types/game';
+import {
+  isUpstashConfigured,
+  addCloudScore,
+  syncLeaderboard,
+  getCloudLeaderboard,
+} from '@/lib/upstash-client';
 
 /**
  * Safe localStorage wrapper - handles errors gracefully
@@ -45,6 +52,9 @@ const safeStorage: StateStorage = {
 /** Maximum entries per mode */
 const MAX_ENTRIES_PER_MODE = 10;
 
+/** Cloud sync status */
+export type CloudSyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
 interface LeaderboardState {
   /** Entries grouped by mode */
   entries: {
@@ -52,6 +62,10 @@ interface LeaderboardState {
     coop: LeaderboardEntry[];
     pvp: LeaderboardEntry[];
   };
+  /** Cloud sync status */
+  cloudStatus: CloudSyncStatus;
+  /** Whether cloud is configured */
+  isCloudEnabled: boolean;
   /** Add a new entry to the leaderboard */
   addEntry: (entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>) => void;
   /** Get top scores for a mode */
@@ -60,6 +74,12 @@ interface LeaderboardState {
   clearMode: (mode: GameMode) => void;
   /** Clear all entries */
   clearAll: () => void;
+  /** Sync with cloud for a specific mode */
+  syncWithCloud: (mode: GameMode) => Promise<void>;
+  /** Sync all modes with cloud */
+  syncAllWithCloud: () => Promise<void>;
+  /** Fetch cloud scores for a mode (read-only) */
+  fetchCloudScores: (mode: GameMode) => Promise<LeaderboardEntry[]>;
 }
 
 /** Generate unique ID */
@@ -75,6 +95,8 @@ export const useLeaderboardStore = create<LeaderboardState>()(
         coop: [],
         pvp: [],
       },
+      cloudStatus: 'idle' as CloudSyncStatus,
+      isCloudEnabled: isUpstashConfigured(),
 
       addEntry: (entryData) => {
         const entry: LeaderboardEntry = {
@@ -102,6 +124,13 @@ export const useLeaderboardStore = create<LeaderboardState>()(
             },
           };
         });
+
+        // Async cloud sync (fire and forget)
+        if (isUpstashConfigured()) {
+          addCloudScore(entry.mode, entry).catch((err) => {
+            console.warn('[Leaderboard] Cloud sync failed:', err);
+          });
+        }
       },
 
       getTopScores: (mode, limit = MAX_ENTRIES_PER_MODE) => {
@@ -126,10 +155,78 @@ export const useLeaderboardStore = create<LeaderboardState>()(
           },
         });
       },
+
+      syncWithCloud: async (mode) => {
+        if (!isUpstashConfigured()) return;
+
+        set({ cloudStatus: 'syncing' });
+
+        try {
+          const localEntries = get().entries[mode];
+          const mergedEntries = await syncLeaderboard(mode, localEntries);
+
+          set((state) => ({
+            entries: {
+              ...state.entries,
+              [mode]: mergedEntries,
+            },
+            cloudStatus: 'success',
+          }));
+        } catch (error) {
+          console.error('[Leaderboard] Cloud sync error:', error);
+          set({ cloudStatus: 'error' });
+        }
+      },
+
+      syncAllWithCloud: async () => {
+        if (!isUpstashConfigured()) return;
+
+        set({ cloudStatus: 'syncing' });
+
+        try {
+          const modes: GameMode[] = ['solo', 'coop', 'pvp'];
+          const state = get();
+
+          const results = await Promise.all(
+            modes.map(async (mode) => {
+              const merged = await syncLeaderboard(mode, state.entries[mode]);
+              return { mode, entries: merged };
+            })
+          );
+
+          const newEntries = { ...state.entries };
+          for (const result of results) {
+            newEntries[result.mode] = result.entries;
+          }
+
+          set({
+            entries: newEntries,
+            cloudStatus: 'success',
+          });
+        } catch (error) {
+          console.error('[Leaderboard] Cloud sync all error:', error);
+          set({ cloudStatus: 'error' });
+        }
+      },
+
+      fetchCloudScores: async (mode) => {
+        if (!isUpstashConfigured()) return [];
+
+        try {
+          return await getCloudLeaderboard(mode, true);
+        } catch (error) {
+          console.error('[Leaderboard] Cloud fetch error:', error);
+          return [];
+        }
+      },
     }),
     {
       name: 'pendu-leaderboard',
       storage: createJSONStorage(() => safeStorage),
+      partialize: (state) => ({
+        entries: state.entries,
+        // Don't persist cloudStatus or isCloudEnabled
+      }),
     }
   )
 );

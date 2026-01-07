@@ -1,7 +1,11 @@
 /**
  * Types for the Hangman game engine
  * Pure domain types - no external dependencies
+ *
+ * ISO/IEC 25010 - Maintainability: Explicit type definitions
  */
+
+import type { DifficultyLevel } from './difficulty';
 
 /** Uppercase letter A-Z */
 export type Letter =
@@ -79,11 +83,15 @@ export interface GameState {
   originalWord: string;
   /** Category/hint (optional) */
   category?: string;
+  /** Difficulty level (optional, defaults to 'normal') */
+  difficulty?: DifficultyLevel;
+  /** Maximum errors for this game (from difficulty config) */
+  maxErrors: number;
   /** Letters that have been correctly guessed */
   correctLetters: Set<Letter>;
   /** Letters that were wrong guesses */
   wrongLetters: Set<Letter>;
-  /** Current number of errors (0-6) */
+  /** Current number of errors */
   errors: number;
   /** Current game status */
   status: GameStatus;
@@ -108,6 +116,10 @@ export type DisplayChar = Letter | '_' | ' ' | '-';
 export interface GameConfig {
   word: string;
   category?: string;
+  /** Difficulty level (defaults to 'normal') */
+  difficulty?: DifficultyLevel;
+  /** Override maxErrors directly (takes precedence over difficulty) */
+  maxErrors?: number;
 }
 
 // ============================================================================
@@ -150,8 +162,48 @@ export interface RestartMessage {
   payload: Record<string, never>;
 }
 
+/** Message: Player joined room (for 6-player support) */
+export interface PlayerJoinMessage {
+  type: 'player_join';
+  payload: {
+    playerId: string;
+    playerName: string;
+  };
+}
+
+/** Message: Player list update (broadcast by host) */
+export interface PlayersUpdateMessage {
+  type: 'players_update';
+  payload: {
+    players: Array<{
+      id: string;
+      name: string;
+      isHost: boolean;
+      isReady: boolean;
+      score: number;
+    }>;
+    currentTurnIndex: number;
+  };
+}
+
+/** Message: Turn changed */
+export interface TurnChangeMessage {
+  type: 'turn_change';
+  payload: {
+    currentTurnIndex: number;
+    currentPlayerId: string;
+  };
+}
+
 /** All possible game messages (discriminated union) */
-export type GameMessage = StartGameMessage | GuessMessage | StateMessage | RestartMessage;
+export type GameMessage =
+  | StartGameMessage
+  | GuessMessage
+  | StateMessage
+  | RestartMessage
+  | PlayerJoinMessage
+  | PlayersUpdateMessage
+  | TurnChangeMessage;
 
 /** Connection status for multiplayer */
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -176,6 +228,8 @@ export interface LeaderboardEntry {
   errors: number;
   /** Whether the player won */
   won: boolean;
+  /** Difficulty level (optional for backward compatibility) */
+  difficulty?: DifficultyLevel;
   /** Timestamp of game completion */
   timestamp: number;
 }

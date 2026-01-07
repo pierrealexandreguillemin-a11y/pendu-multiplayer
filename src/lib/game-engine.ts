@@ -2,10 +2,14 @@
  * Game Engine - Pure functions for Hangman logic
  * NO external dependencies (React, Socket, etc.)
  * 100% testable, pure functions only
+ *
+ * ISO/IEC 25010 - Reliability: Pure functions, deterministic behavior
+ * ISO/IEC 5055 - Code Quality: No side effects
  */
 
 import type { GameState, GameConfig, GuessResult, Letter, DisplayChar } from '@/types/game';
 import { MAX_ERRORS, ALPHABET } from '@/types/game';
+import { DIFFICULTY_CONFIGS } from './difficulty-config';
 
 /**
  * Normalize a word: uppercase + remove accents
@@ -35,12 +39,23 @@ export function toLetter(char: string): Letter {
 
 /**
  * Create a new game state from config
+ * Supports difficulty-based maxErrors
  */
 export function createGame(config: GameConfig): GameState {
+  // Determine maxErrors: explicit > difficulty config > default
+  let maxErrors = MAX_ERRORS;
+  if (config.maxErrors !== undefined) {
+    maxErrors = config.maxErrors;
+  } else if (config.difficulty) {
+    maxErrors = DIFFICULTY_CONFIGS[config.difficulty].maxErrors;
+  }
+
   return {
     word: normalizeWord(config.word),
     originalWord: config.word,
     category: config.category,
+    difficulty: config.difficulty,
+    maxErrors,
     correctLetters: new Set<Letter>(),
     wrongLetters: new Set<Letter>(),
     errors: 0,
@@ -151,11 +166,11 @@ export function guessLetter(state: GameState, inputLetter: Letter | string): Gue
     status: 'playing',
   };
 
-  // Determine final status
+  // Determine final status (use state.maxErrors instead of global MAX_ERRORS)
   let finalStatus: GameState['status'] = 'playing';
   if (checkVictory(intermediateState)) {
     finalStatus = 'won';
-  } else if (newErrors >= MAX_ERRORS) {
+  } else if (newErrors >= state.maxErrors) {
     finalStatus = 'lost';
   }
 
@@ -198,10 +213,10 @@ export function getGuessedLetters(state: GameState): Set<Letter> {
 }
 
 /**
- * Get remaining attempts
+ * Get remaining attempts (uses state.maxErrors for difficulty support)
  */
 export function getRemainingAttempts(state: GameState): number {
-  return MAX_ERRORS - state.errors;
+  return state.maxErrors - state.errors;
 }
 
 /**
