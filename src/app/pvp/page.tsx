@@ -16,7 +16,11 @@ export default function PvPPage() {
 
 function Loading() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800">
+    <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="relative w-12 h-12">
+        <div className="absolute inset-0 border-4 border-white/20 rounded-full" />
+        <div className="absolute inset-0 border-4 border-t-pink-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin" />
+      </div>
       <p className="text-white">Chargement...</p>
     </main>
   );

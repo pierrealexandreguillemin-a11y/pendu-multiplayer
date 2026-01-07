@@ -90,7 +90,7 @@ export function GameStatus({
                 <span className="text-xl font-bold text-yellow-600">+{score} points</span>
               </div>
               {sessionScore !== undefined && sessionScore > 0 && (
-                <span className="text-sm text-gray-500">Total session: {sessionScore + score}</span>
+                <span className="text-sm text-gray-600">Total session: {sessionScore + score}</span>
               )}
             </>
           ) : (

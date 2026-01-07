@@ -99,7 +99,7 @@ export function PvPGame({
       )}
 
       {!isGameOver && isHost && (
-        <p className="text-center text-gray-500 text-sm">Attends que les autres devinent...</p>
+        <p className="text-center text-gray-400 text-sm">Attends que les autres devinent...</p>
       )}
     </GlassCard>
   );

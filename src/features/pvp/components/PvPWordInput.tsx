@@ -41,7 +41,7 @@ export function PvPWordInput({
           className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
         />
 
-        <p className="text-gray-500 text-xs text-center">
+        <p className="text-gray-400 text-xs text-center">
           Les accents seront ignorés pour les devinettes
         </p>
 

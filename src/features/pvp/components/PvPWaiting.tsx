@@ -1,8 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { GlassCard } from '@/components/effects/glass-card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { ConnectionStatus } from '@/types/game';
 
 interface PvPWaitingProps {
@@ -22,6 +31,8 @@ export function PvPWaiting({
   onStartWordInput,
   onQuit,
 }: PvPWaitingProps) {
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+
   const getJoinUrl = (id: string) => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/pvp?join=${id}`;
@@ -46,7 +57,7 @@ export function PvPWaiting({
           <p className="text-gray-400 text-sm">Scanne pour rejoindre</p>
 
           <details className="text-left">
-            <summary className="text-gray-500 text-xs cursor-pointer hover:text-gray-300">
+            <summary className="text-gray-400 text-xs cursor-pointer hover:text-gray-200">
               Ou entre le code manuellement
             </summary>
             <div className="mt-2 p-2 bg-white/10 rounded text-center">
@@ -71,9 +82,31 @@ export function PvPWaiting({
         </Button>
       )}
 
-      <Button onClick={onQuit} variant="destructive" size="sm">
+      <Button onClick={() => setShowQuitConfirm(true)} variant="destructive" size="sm">
         Quitter
       </Button>
+
+      {/* ISO/IEC 25065 - Confirmation before destructive action */}
+      <Dialog open={showQuitConfirm} onOpenChange={setShowQuitConfirm}>
+        <DialogContent className="bg-gray-800 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Quitter la partie ?</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {isHost
+                ? 'Les autres joueurs seront déconnectés. Cette action est irréversible.'
+                : 'Tu seras déconnecté de la partie.'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowQuitConfirm(false)}>
+              Annuler
+            </Button>
+            <Button variant="destructive" onClick={onQuit}>
+              Quitter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </GlassCard>
   );
 }

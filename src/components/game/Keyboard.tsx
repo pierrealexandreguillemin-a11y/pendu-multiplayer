@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useCallback } from 'react';
 import type { Letter } from '@/types/game';
 import { ALPHABET } from '@/types/game';
 
@@ -13,6 +14,8 @@ interface KeyboardProps {
 /**
  * Virtual keyboard for letter selection
  * Shows state of each letter (unused, correct, wrong)
+ * ISO/IEC 25065 - Supports physical keyboard input
+ * WCAG 2.1 - Touch targets minimum 44px
  */
 export function Keyboard({
   correctLetters,
@@ -20,15 +23,35 @@ export function Keyboard({
   onLetterClick,
   disabled = false,
 }: KeyboardProps) {
-  const getLetterState = (letter: Letter): 'unused' | 'correct' | 'wrong' => {
-    if (correctLetters.has(letter)) return 'correct';
-    if (wrongLetters.has(letter)) return 'wrong';
-    return 'unused';
-  };
+  const getLetterState = useCallback(
+    (letter: Letter): 'unused' | 'correct' | 'wrong' => {
+      if (correctLetters.has(letter)) return 'correct';
+      if (wrongLetters.has(letter)) return 'wrong';
+      return 'unused';
+    },
+    [correctLetters, wrongLetters]
+  );
+
+  // Physical keyboard support (ISO/IEC 25065 - Efficience)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (disabled) return;
+
+      const letter = e.key.toUpperCase() as Letter;
+      if (ALPHABET.includes(letter) && getLetterState(letter) === 'unused') {
+        e.preventDefault();
+        onLetterClick(letter);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [disabled, onLetterClick, getLetterState]);
 
   const getButtonClasses = (state: 'unused' | 'correct' | 'wrong'): string => {
+    // WCAG 2.1 AA - Touch targets minimum 44px (w-11 = 44px)
     const base = `
-      w-8 h-10 sm:w-10 sm:h-12
+      w-11 h-11 sm:w-12 sm:h-14
       flex items-center justify-center
       text-sm sm:text-lg font-semibold
       rounded-lg

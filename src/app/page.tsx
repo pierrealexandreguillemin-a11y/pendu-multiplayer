@@ -72,7 +72,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <p className="text-gray-500 text-xs mt-8">Pendu Multijoueur PWA</p>
+          <p className="text-gray-400 text-xs mt-8">Pendu Multijoueur PWA</p>
         </GlassCard>
       </PageTransition>
     </main>
