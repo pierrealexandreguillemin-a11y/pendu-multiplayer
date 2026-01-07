@@ -1,7 +1,7 @@
 'use client';
 
 import { GlassCard } from '@/components/effects/glass-card';
-import { HangmanDrawing } from '@/components/game/HangmanDrawing';
+import { BalloonDisplay } from '@/components/game/BalloonDisplay';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
@@ -69,6 +69,7 @@ export function PvPGame({
       <GameStatus
         status={gameState.status}
         errors={gameState.errors}
+        maxErrors={gameState.maxErrors}
         category={gameState.category}
         score={isHost ? 0 : wordScore}
         sessionScore={isHost ? undefined : sessionScore}
@@ -78,7 +79,7 @@ export function PvPGame({
       />
 
       <div className="my-6 text-white">
-        <HangmanDrawing errors={gameState.errors} />
+        <BalloonDisplay errors={gameState.errors} maxErrors={gameState.maxErrors} />
       </div>
 
       <div className="mb-6 text-white">

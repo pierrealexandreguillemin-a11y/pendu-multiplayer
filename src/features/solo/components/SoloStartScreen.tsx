@@ -2,6 +2,7 @@
 
 import { GlassCard } from '@/components/effects/glass-card';
 import { PageTransition } from '@/components/effects/page-transition';
+import { DifficultySelector } from '@/components/game/DifficultySelector';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 
@@ -36,6 +37,9 @@ export function SoloStartScreen({
             onChange={(e) => onPlayerNameChange(e.target.value)}
             className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 text-center"
           />
+
+          <DifficultySelector className="my-4" />
+
           <button
             onClick={onStart}
             disabled={!playerName.trim()}

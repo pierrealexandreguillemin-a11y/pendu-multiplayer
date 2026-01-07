@@ -1,11 +1,12 @@
 'use client';
 
 import { GlassCard } from '@/components/effects/glass-card';
-import { HangmanDrawing } from '@/components/game/HangmanDrawing';
+import { BalloonDisplay } from '@/components/game/BalloonDisplay';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
 import type { GameState, Letter, DisplayChar } from '@/types/game';
+import type { DifficultyConfig } from '@/types/difficulty';
 
 interface SoloGameScreenProps {
   playerName: string;
@@ -14,6 +15,8 @@ interface SoloGameScreenProps {
   sessionScore: number;
   wordsWon: number;
   wordScore: number;
+  /** Difficulty config for showCategory */
+  difficultyConfig?: DifficultyConfig;
   onGuess: (letter: Letter) => void;
   onContinue: () => void;
   onEnd: () => void;
@@ -27,6 +30,7 @@ export function SoloGameScreen({
   sessionScore,
   wordsWon,
   wordScore,
+  difficultyConfig,
   onGuess,
   onContinue,
   onEnd,
@@ -54,7 +58,9 @@ export function SoloGameScreen({
       <GameStatus
         status={gameState.status}
         errors={gameState.errors}
+        maxErrors={gameState.maxErrors}
         category={gameState.category}
+        showCategory={difficultyConfig?.showCategory ?? true}
         score={wordScore}
         sessionScore={sessionScore}
         onPlayAgain={onContinue}
@@ -63,7 +69,7 @@ export function SoloGameScreen({
       />
 
       <div className="my-6 text-white">
-        <HangmanDrawing errors={gameState.errors} />
+        <BalloonDisplay errors={gameState.errors} maxErrors={gameState.maxErrors} />
       </div>
 
       <div className="mb-8 text-white">
