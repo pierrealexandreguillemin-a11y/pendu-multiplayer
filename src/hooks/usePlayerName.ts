@@ -64,7 +64,8 @@ export function usePlayerName(): [string, (name: string) => void] {
   const storedName = useSyncExternalStore(subscribe, getStoredName, getServerSnapshot);
 
   // Local state for immediate UI updates
-  const [name, setName] = useState(storedName);
+  // undefined means "not yet initialized by user", use null-coalescing to fallback
+  const [name, setName] = useState<string | undefined>(undefined);
 
   // Update function that syncs to localStorage
   const updateName = useCallback((newName: string) => {
@@ -74,8 +75,9 @@ export function usePlayerName(): [string, (name: string) => void] {
     }
   }, []);
 
-  // Return stored name if local is empty (initial load)
-  const displayName = name || storedName;
+  // Use stored name only if user hasn't typed yet (name is undefined)
+  // This allows user to clear the field (name = "") while still auto-filling on first load
+  const displayName = name ?? storedName;
 
   return [displayName, updateName];
 }
