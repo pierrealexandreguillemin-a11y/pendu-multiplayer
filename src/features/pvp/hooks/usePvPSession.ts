@@ -50,6 +50,9 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
   const [wordsWon, setWordsWon] = useState(0);
   const hasRecordedRef = useRef(false);
 
+  // ISO/IEC 25010 - Reliability: Track if start message has been sent for current game
+  const startBroadcastSentRef = useRef(false);
+
   // Refs for stable message handler (avoids race condition)
   const gameRef = useRef(game);
   const phaseRef = useRef(phase);
@@ -87,6 +90,21 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
   const isMyTurn = !peer.isHost && currentGuesser?.id === peer.peerId;
   const canPlay = phase === 'playing' && isMyTurn;
 
+  // ISO/IEC 25010 - Reliability: Send start message when gameState is ready
+  // This replaces the fragile setTimeout approach with a reactive pattern
+  useEffect(() => {
+    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
+      peer.sendMessage({
+        type: 'start',
+        payload: {
+          word: game.gameState.word,
+          category: game.gameState.category ?? 'PvP',
+        },
+      });
+      startBroadcastSentRef.current = true;
+    }
+  }, [peer, game.gameState, phase]);
+
   // Record on DEFEAT (guessers only)
   useEffect(() => {
     if (
@@ -116,23 +134,30 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
   ]);
 
   // Broadcast players update (host only)
-  const broadcastPlayersUpdate = useCallback(() => {
-    if (!peer.isHost) return;
+  // ISO/IEC 25010 - Reliability: Accept explicit player list to avoid stale ref issues
+  const broadcastPlayersUpdate = useCallback(
+    (playerList?: PvPPlayer[], turnIndex?: number) => {
+      if (!peer.isHost) return;
 
-    peer.sendMessage({
-      type: 'players_update',
-      payload: {
-        players: playersRef.current.map((p) => ({
-          id: p.id,
-          name: p.name,
-          isHost: p.isHost,
-          isReady: p.isReady,
-          score: p.score,
-        })),
-        currentTurnIndex: currentTurnIndexRef.current,
-      },
-    });
-  }, [peer]);
+      const playersToSend = playerList ?? playersRef.current;
+      const indexToSend = turnIndex ?? currentTurnIndexRef.current;
+
+      peer.sendMessage({
+        type: 'players_update',
+        payload: {
+          players: playersToSend.map((p) => ({
+            id: p.id,
+            name: p.name,
+            isHost: p.isHost,
+            isReady: p.isReady,
+            score: p.score,
+          })),
+          currentTurnIndex: indexToSend,
+        },
+      });
+    },
+    [peer]
+  );
 
   // Advance to next guesser's turn
   const advanceTurn = useCallback(() => {
@@ -155,6 +180,47 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     }
   }, [peer]);
 
+  // ISO/IEC 25010 - Reliability: Handle player disconnection
+  useEffect(() => {
+    const handleDisconnect = (disconnectedPeerId: string) => {
+      if (!peer.isHost) return; // Only host manages player list
+
+      const playerIndex = playersRef.current.findIndex((p) => p.id === disconnectedPeerId);
+      if (playerIndex === -1) return;
+
+      // Remove player from list
+      const updatedPlayers = playersRef.current.filter((p) => p.id !== disconnectedPeerId);
+      setPlayers(updatedPlayers);
+
+      // Adjust turn index for guessers (excluding host)
+      const updatedGuessers = updatedPlayers.filter((p) => !p.isHost);
+      let newTurnIndex = currentTurnIndexRef.current;
+      if (updatedGuessers.length > 0) {
+        // Find position of disconnected player among guessers
+        const guesserIndex = playersRef.current
+          .filter((p) => !p.isHost)
+          .findIndex((p) => p.id === disconnectedPeerId);
+
+        if (guesserIndex !== -1) {
+          if (guesserIndex < currentTurnIndexRef.current) {
+            newTurnIndex = currentTurnIndexRef.current - 1;
+          } else if (guesserIndex === currentTurnIndexRef.current) {
+            newTurnIndex = currentTurnIndexRef.current % updatedGuessers.length;
+          }
+        }
+      }
+      setCurrentTurnIndex(newTurnIndex);
+
+      // Broadcast updated player list
+      broadcastPlayersUpdate(updatedPlayers, newTurnIndex);
+    };
+
+    peer.onPeerDisconnect(handleDisconnect);
+    return () => {
+      peer.offPeerDisconnect();
+    };
+  }, [peer, broadcastPlayersUpdate]);
+
   // Handle incoming messages - uses refs to avoid stale closures
   // ISO/IEC 25010 - Reliability: Single handler registration with cleanup
   useEffect(() => {
@@ -168,10 +234,24 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
           break;
 
         case 'guess':
-          gameRef.current.guess(message.payload.letter);
-          // Host advances turn after each guess
+          // ISO/IEC 25010 - Reliability: Host must relay guess to all other guests
+          // In star topology, only host receives from guests, so host must broadcast
           if (peer.isHost) {
+            // Host (word chooser) applies guess locally
+            gameRef.current.guess(message.payload.letter);
+            // Host relays to ALL guessers (including sender, who will ignore duplicate)
+            peer.sendMessage({ type: 'guess', payload: { letter: message.payload.letter } });
             advanceTurn();
+          } else {
+            // Guesser receives relayed guess from host - apply locally
+            // Skip if already guessed (sender's own message relayed back)
+            const letter = message.payload.letter;
+            const alreadyGuessed =
+              gameRef.current.gameState?.correctLetters.has(letter) ||
+              gameRef.current.gameState?.wrongLetters.has(letter);
+            if (!alreadyGuessed) {
+              gameRef.current.guess(letter);
+            }
           }
           break;
 
@@ -196,6 +276,12 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
               return;
             }
 
+            // Avoid duplicates
+            if (playersRef.current.some((p) => p.id === playerId)) {
+              console.warn('[PvP] Player already in room:', playerId);
+              return;
+            }
+
             // Add player to list
             const newPlayer: PvPPlayer = {
               id: playerId,
@@ -205,14 +291,12 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
               score: 0,
             };
 
-            setPlayers((prev) => {
-              // Avoid duplicates
-              if (prev.some((p) => p.id === playerId)) return prev;
-              return [...prev, newPlayer];
-            });
+            // ISO/IEC 25010 - Reliability: Build new list and broadcast immediately
+            const updatedPlayers = [...playersRef.current, newPlayer];
+            setPlayers(updatedPlayers);
 
-            // Broadcast updated player list
-            setTimeout(() => broadcastPlayersUpdate(), 100);
+            // Broadcast with explicit data to avoid stale ref
+            broadcastPlayersUpdate(updatedPlayers, currentTurnIndexRef.current);
           }
           break;
 
@@ -241,16 +325,6 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     };
   }, [peer, advanceTurn, broadcastPlayersUpdate]); // Only peer as dependency - stable reference
 
-  // Send start when host starts
-  useEffect(() => {
-    if (peer.isHost && phase === 'playing' && game.gameState) {
-      peer.sendMessage({
-        type: 'start',
-        payload: { word: game.gameState.word, category: game.gameState.category ?? 'PvP' },
-      });
-    }
-  }, [peer, phase, game.gameState]);
-
   const createRoom = useCallback(async () => {
     if (!playerName.trim()) return;
     const peerId = await peer.createRoom();
@@ -272,16 +346,24 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     if (!playerName.trim() || !joinId.trim()) return;
     await peer.joinRoom(joinId.trim());
 
-    // Send join request to host
-    setTimeout(() => {
-      peer.sendMessage({
-        type: 'player_join',
-        payload: {
-          playerId: peer.peerId ?? '',
-          playerName: playerName.trim(),
-        },
-      });
-    }, 500);
+    // ISO/IEC 25010 - Reliability: Wait for stable connection before sending join
+    // The peerId is guaranteed to be set after joinRoom resolves
+    const currentPeerId = peer.peerId;
+    if (!currentPeerId) {
+      console.error('[PvP] Failed to get peerId after joining');
+      return;
+    }
+
+    // Small delay to ensure connection is fully established
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    peer.sendMessage({
+      type: 'player_join',
+      payload: {
+        playerId: currentPeerId,
+        playerName: playerName.trim(),
+      },
+    });
 
     setPhase('waiting');
   }, [playerName, joinId, peer]);
@@ -292,6 +374,8 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
 
   const startGameWithWord = useCallback(() => {
     if (!customWord.trim()) return;
+    // ISO/IEC 25010 - Reliability: Reset broadcast flag for new game
+    startBroadcastSentRef.current = false;
     game.startGame(customWord.trim(), customCategory.trim() || 'PvP');
     setPhase('playing');
   }, [customWord, customCategory, game]);
@@ -340,6 +424,7 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     setCurrentTurnIndex(0);
     setSessionScore(0);
     setWordsWon(0);
+    startBroadcastSentRef.current = false;
   }, [peer]);
 
   const goBackToWaiting = useCallback(() => {

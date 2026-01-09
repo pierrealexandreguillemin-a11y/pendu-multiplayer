@@ -6,6 +6,7 @@ import type { GameMessage, ConnectionStatus } from '@/types/game';
 import { safeValidateGameMessage } from '@/lib/message-validation';
 
 type MessageHandler = (message: GameMessage, fromId: string) => void;
+type DisconnectHandler = (peerId: string) => void;
 
 interface UsePeerConnectionReturn {
   peerId: string | null;
@@ -19,8 +20,18 @@ interface UsePeerConnectionReturn {
   disconnect: () => void;
   onMessage: (handler: MessageHandler) => void;
   offMessage: () => void;
+  onPeerDisconnect: (handler: DisconnectHandler) => void;
+  offPeerDisconnect: () => void;
 }
 
+// ISO/IEC 25010 - Reliability: Limit buffer to prevent memory issues
+const MAX_BUFFERED_MESSAGES = 50;
+const JOIN_TIMEOUT_MS = 10000; // 10 seconds timeout for joining
+
+/**
+ * ISO/IEC 25010 - Reliability: Improved peer connection hook with message buffering
+ * Messages received before handler registration are buffered and processed when handler is set
+ */
 export function usePeerConnection(): UsePeerConnectionReturn {
   const [peerId, setPeerId] = useState<string | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
@@ -30,7 +41,11 @@ export function usePeerConnection(): UsePeerConnectionReturn {
 
   const peerRef = useRef<Peer | null>(null);
   const connectionsRef = useRef<Map<string, DataConnection>>(new Map());
-  const messageHandlerRef = useRef<((message: GameMessage, fromId: string) => void) | null>(null);
+  const messageHandlerRef = useRef<MessageHandler | null>(null);
+  // ISO/IEC 25010 - Reliability: Buffer messages received before handler is registered
+  const messageBufferRef = useRef<Array<{ message: GameMessage; fromId: string }>>([]);
+  // ISO/IEC 25010 - Reliability: Notify when a peer disconnects
+  const disconnectHandlerRef = useRef<DisconnectHandler | null>(null);
 
   const setupConnection = useCallback((conn: DataConnection) => {
     conn.on('open', () => {
@@ -40,25 +55,42 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     });
 
     conn.on('data', (data) => {
+      const validatedMessage = safeValidateGameMessage(data);
+      if (!validatedMessage) {
+        console.warn('[PeerConnection] Invalid message received:', data);
+        return;
+      }
+
+      // ISO/IEC 25010 - Reliability: Buffer or deliver message based on handler state
       if (messageHandlerRef.current) {
-        const validatedMessage = safeValidateGameMessage(data);
-        if (validatedMessage) {
-          messageHandlerRef.current(validatedMessage, conn.peer);
+        messageHandlerRef.current(validatedMessage, conn.peer);
+      } else {
+        // Buffer message if handler not yet registered (with limit)
+        if (messageBufferRef.current.length < MAX_BUFFERED_MESSAGES) {
+          messageBufferRef.current.push({ message: validatedMessage, fromId: conn.peer });
         } else {
-          console.warn('[PeerConnection] Invalid message received:', data);
+          console.warn('[PeerConnection] Message buffer full, dropping message');
         }
       }
     });
 
     conn.on('close', () => {
-      connectionsRef.current.delete(conn.peer);
+      const disconnectedPeerId = conn.peer;
+      connectionsRef.current.delete(disconnectedPeerId);
       setConnectedPeers(Array.from(connectionsRef.current.keys()));
+
+      // ISO/IEC 25010 - Reliability: Notify about disconnected peer
+      if (disconnectHandlerRef.current) {
+        disconnectHandlerRef.current(disconnectedPeerId);
+      }
+
       if (connectionsRef.current.size === 0) {
         setStatus('disconnected');
       }
     });
 
     conn.on('error', (err) => {
+      console.error('[PeerConnection] Connection error:', err.message);
       setError(err.message);
     });
   }, []);
@@ -95,6 +127,14 @@ export function usePeerConnection(): UsePeerConnectionReturn {
         setStatus('connecting');
         setIsHost(false);
 
+        // ISO/IEC 25010 - Reliability: Timeout to prevent infinite waiting
+        const timeoutId = setTimeout(() => {
+          peerRef.current?.destroy();
+          setError('Connection timeout - host may not exist');
+          setStatus('error');
+          reject(new Error('Connection timeout'));
+        }, JOIN_TIMEOUT_MS);
+
         const peer = new Peer();
         peerRef.current = peer;
 
@@ -103,11 +143,18 @@ export function usePeerConnection(): UsePeerConnectionReturn {
           const conn = peer.connect(hostId, { reliable: true });
           setupConnection(conn);
 
-          conn.on('open', () => resolve());
-          conn.on('error', (err) => reject(err));
+          conn.on('open', () => {
+            clearTimeout(timeoutId);
+            resolve();
+          });
+          conn.on('error', (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          });
         });
 
         peer.on('error', (err) => {
+          clearTimeout(timeoutId);
           setError(err.message);
           setStatus('error');
           reject(err);
@@ -137,14 +184,37 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     setStatus('disconnected');
     setConnectedPeers([]);
     setIsHost(false);
+    setError(null);
+    // ISO/IEC 25010 - Reliability: Clear message buffer on disconnect
+    messageBufferRef.current = [];
+    messageHandlerRef.current = null;
   }, []);
 
   const onMessage = useCallback((handler: MessageHandler) => {
     messageHandlerRef.current = handler;
+
+    // ISO/IEC 25010 - Reliability: Process any buffered messages
+    if (messageBufferRef.current.length > 0) {
+      const bufferedMessages = [...messageBufferRef.current];
+      messageBufferRef.current = [];
+      bufferedMessages.forEach(({ message, fromId }) => {
+        handler(message, fromId);
+      });
+    }
   }, []);
 
   const offMessage = useCallback(() => {
     messageHandlerRef.current = null;
+    // Clear buffer when handler is removed
+    messageBufferRef.current = [];
+  }, []);
+
+  const onPeerDisconnect = useCallback((handler: DisconnectHandler) => {
+    disconnectHandlerRef.current = handler;
+  }, []);
+
+  const offPeerDisconnect = useCallback(() => {
+    disconnectHandlerRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -165,5 +235,7 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     disconnect,
     onMessage,
     offMessage,
+    onPeerDisconnect,
+    offPeerDisconnect,
   };
 }

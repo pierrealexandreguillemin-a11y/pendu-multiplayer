@@ -48,6 +48,9 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
   const [wordsWon, setWordsWon] = useState(0);
   const hasRecordedRef = useRef(false);
 
+  // ISO/IEC 25010 - Reliability: Track if start message has been sent for current game
+  const startBroadcastSentRef = useRef(false);
+
   // Refs for stable message handler (avoids race condition)
   const gameRef = useRef(game);
   const phaseRef = useRef(phase);
@@ -82,6 +85,21 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
   const isMyTurn = currentPlayer?.id === peer.peerId;
   const canPlay = phase === 'playing' && isMyTurn;
 
+  // ISO/IEC 25010 - Reliability: Send start message when gameState is ready
+  // This replaces the fragile setTimeout approach with a reactive pattern
+  useEffect(() => {
+    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
+      peer.sendMessage({
+        type: 'start',
+        payload: {
+          word: game.gameState.word,
+          category: game.gameState.category ?? '',
+        },
+      });
+      startBroadcastSentRef.current = true;
+    }
+  }, [peer, game.gameState, phase]);
+
   // Record on DEFEAT
   useEffect(() => {
     if (game.gameState?.status === 'lost' && playerName && !hasRecordedRef.current) {
@@ -105,23 +123,30 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
   ]);
 
   // Broadcast players update (host only)
-  const broadcastPlayersUpdate = useCallback(() => {
-    if (!peer.isHost) return;
+  // ISO/IEC 25010 - Reliability: Accept explicit player list to avoid stale ref issues
+  const broadcastPlayersUpdate = useCallback(
+    (playerList?: CoopPlayer[], turnIndex?: number) => {
+      if (!peer.isHost) return;
 
-    peer.sendMessage({
-      type: 'players_update',
-      payload: {
-        players: playersRef.current.map((p) => ({
-          id: p.id,
-          name: p.name,
-          isHost: p.isHost,
-          isReady: p.isReady,
-          score: p.score,
-        })),
-        currentTurnIndex: currentTurnIndexRef.current,
-      },
-    });
-  }, [peer]);
+      const playersToSend = playerList ?? playersRef.current;
+      const indexToSend = turnIndex ?? currentTurnIndexRef.current;
+
+      peer.sendMessage({
+        type: 'players_update',
+        payload: {
+          players: playersToSend.map((p) => ({
+            id: p.id,
+            name: p.name,
+            isHost: p.isHost,
+            isReady: p.isReady,
+            score: p.score,
+          })),
+          currentTurnIndex: indexToSend,
+        },
+      });
+    },
+    [peer]
+  );
 
   // Advance to next player's turn
   const advanceTurn = useCallback(() => {
@@ -143,6 +168,42 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     }
   }, [peer]);
 
+  // ISO/IEC 25010 - Reliability: Handle player disconnection
+  useEffect(() => {
+    const handleDisconnect = (disconnectedPeerId: string) => {
+      if (!peer.isHost) return; // Only host manages player list
+
+      const playerIndex = playersRef.current.findIndex((p) => p.id === disconnectedPeerId);
+      if (playerIndex === -1) return;
+
+      // Remove player from list
+      const updatedPlayers = playersRef.current.filter((p) => p.id !== disconnectedPeerId);
+      setPlayers(updatedPlayers);
+
+      // Adjust turn index if needed
+      let newTurnIndex = currentTurnIndexRef.current;
+      if (updatedPlayers.length > 0) {
+        if (playerIndex < currentTurnIndexRef.current) {
+          // Disconnected player was before current turn - shift index back
+          newTurnIndex = currentTurnIndexRef.current - 1;
+        } else if (playerIndex === currentTurnIndexRef.current) {
+          // Disconnected player had current turn - keep index but wrap if needed
+          newTurnIndex = currentTurnIndexRef.current % updatedPlayers.length;
+        }
+        // If disconnected player was after current turn, no change needed
+      }
+      setCurrentTurnIndex(newTurnIndex);
+
+      // Broadcast updated player list
+      broadcastPlayersUpdate(updatedPlayers, newTurnIndex);
+    };
+
+    peer.onPeerDisconnect(handleDisconnect);
+    return () => {
+      peer.offPeerDisconnect();
+    };
+  }, [peer, broadcastPlayersUpdate]);
+
   // Handle incoming messages - uses refs to avoid stale closures
   // ISO/IEC 25010 - Reliability: Single handler registration with cleanup
   useEffect(() => {
@@ -156,10 +217,24 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
           break;
 
         case 'guess':
-          gameRef.current.guess(message.payload.letter);
-          // Host advances turn after each guess
+          // ISO/IEC 25010 - Reliability: Host must relay guess to all other guests
+          // In star topology, only host receives from guests, so host must broadcast
           if (peer.isHost) {
+            // Host applies guess locally
+            gameRef.current.guess(message.payload.letter);
+            // Host relays to ALL guests (including sender, who will ignore duplicate)
+            peer.sendMessage({ type: 'guess', payload: { letter: message.payload.letter } });
             advanceTurn();
+          } else {
+            // Guest receives relayed guess from host - apply locally
+            // Skip if already guessed (sender's own message relayed back)
+            const letter = message.payload.letter;
+            const alreadyGuessed =
+              gameRef.current.gameState?.correctLetters.has(letter) ||
+              gameRef.current.gameState?.wrongLetters.has(letter);
+            if (!alreadyGuessed) {
+              gameRef.current.guess(letter);
+            }
           }
           break;
 
@@ -183,6 +258,12 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
               return;
             }
 
+            // Avoid duplicates
+            if (playersRef.current.some((p) => p.id === playerId)) {
+              console.warn('[Coop] Player already in room:', playerId);
+              return;
+            }
+
             // Add player to list
             const newPlayer: CoopPlayer = {
               id: playerId,
@@ -192,14 +273,12 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
               score: 0,
             };
 
-            setPlayers((prev) => {
-              // Avoid duplicates
-              if (prev.some((p) => p.id === playerId)) return prev;
-              return [...prev, newPlayer];
-            });
+            // ISO/IEC 25010 - Reliability: Build new list and broadcast immediately
+            const updatedPlayers = [...playersRef.current, newPlayer];
+            setPlayers(updatedPlayers);
 
-            // Broadcast updated player list
-            setTimeout(() => broadcastPlayersUpdate(), 100);
+            // Broadcast with explicit data to avoid stale ref
+            broadcastPlayersUpdate(updatedPlayers, currentTurnIndexRef.current);
           }
           break;
 
@@ -226,16 +305,6 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     };
   }, [peer, advanceTurn, broadcastPlayersUpdate]); // Only peer as dependency - stable reference
 
-  // Send start when host starts
-  useEffect(() => {
-    if (peer.isHost && phase === 'playing' && game.gameState) {
-      peer.sendMessage({
-        type: 'start',
-        payload: { word: game.gameState.word, category: game.gameState.category ?? '' },
-      });
-    }
-  }, [peer, phase, game.gameState]);
-
   const createRoom = useCallback(async () => {
     if (!playerName.trim()) return;
     const peerId = await peer.createRoom();
@@ -257,22 +326,32 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     if (!playerName.trim() || !joinId.trim()) return;
     await peer.joinRoom(joinId.trim());
 
-    // Send join request to host
-    setTimeout(() => {
-      peer.sendMessage({
-        type: 'player_join',
-        payload: {
-          playerId: peer.peerId ?? '',
-          playerName: playerName.trim(),
-        },
-      });
-    }, 500);
+    // ISO/IEC 25010 - Reliability: Wait for stable connection before sending join
+    // The peerId is guaranteed to be set after joinRoom resolves
+    const currentPeerId = peer.peerId;
+    if (!currentPeerId) {
+      console.error('[Coop] Failed to get peerId after joining');
+      return;
+    }
+
+    // Small delay to ensure connection is fully established
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    peer.sendMessage({
+      type: 'player_join',
+      payload: {
+        playerId: currentPeerId,
+        playerName: playerName.trim(),
+      },
+    });
 
     setPhase('waiting');
   }, [playerName, joinId, peer]);
 
   const startGame = useCallback(() => {
     hasRecordedRef.current = false;
+    // ISO/IEC 25010 - Reliability: Reset broadcast flag for new game
+    startBroadcastSentRef.current = false;
     game.startGame();
     setPhase('playing');
   }, [game]);
@@ -288,9 +367,10 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
       setWordsWon((prev) => prev + 1);
     }
     hasRecordedRef.current = false;
+    // ISO/IEC 25010 - Reliability: Reset broadcast flag for new game
+    startBroadcastSentRef.current = false;
     game.startGame();
-    peer.sendMessage({ type: 'restart', payload: {} });
-  }, [game, peer]);
+  }, [game]);
 
   const handleGuess = useCallback(
     (letter: Letter) => {
@@ -300,12 +380,17 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
         return;
       }
 
-      game.guess(letter);
-      peer.sendMessage({ type: 'guess', payload: { letter } });
-
-      // Host advances turn locally (will broadcast to others)
+      // ISO/IEC 25010 - Reliability: Different handling for host vs guest
       if (peer.isHost) {
+        // Host applies locally AND broadcasts to all guests
+        game.guess(letter);
+        peer.sendMessage({ type: 'guess', payload: { letter } });
         advanceTurn();
+      } else {
+        // Guest applies locally first (optimistic) then sends to host
+        // Host will relay to all guests, but we already applied it
+        game.guess(letter);
+        peer.sendMessage({ type: 'guess', payload: { letter } });
       }
     },
     [game, peer, isMyTurn, phase, advanceTurn]
@@ -318,6 +403,7 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     setCurrentTurnIndex(0);
     setSessionScore(0);
     setWordsWon(0);
+    startBroadcastSentRef.current = false;
   }, [peer]);
 
   return {
