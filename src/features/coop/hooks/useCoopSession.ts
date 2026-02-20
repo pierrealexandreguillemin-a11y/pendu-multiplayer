@@ -324,23 +324,14 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
 
   const joinRoom = useCallback(async () => {
     if (!playerName.trim() || !joinId.trim()) return;
-    await peer.joinRoom(joinId.trim());
 
-    // ISO/IEC 25010 - Reliability: Wait for stable connection before sending join
-    // The peerId is guaranteed to be set after joinRoom resolves
-    const currentPeerId = peer.peerId;
-    if (!currentPeerId) {
-      console.error('[Coop] Failed to get peerId after joining');
-      return;
-    }
-
-    // Small delay to ensure connection is fully established
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // joinRoom now returns the peerId directly, avoiding React state timing issues
+    const myPeerId = await peer.joinRoom(joinId.trim());
 
     peer.sendMessage({
       type: 'player_join',
       payload: {
-        playerId: currentPeerId,
+        playerId: myPeerId,
         playerName: playerName.trim(),
       },
     });

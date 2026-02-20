@@ -15,7 +15,7 @@ interface UsePeerConnectionReturn {
   isHost: boolean;
   connectedPeers: string[];
   createRoom: () => Promise<string>;
-  joinRoom: (hostId: string) => Promise<void>;
+  joinRoom: (hostId: string) => Promise<string>;
   sendMessage: (message: GameMessage) => void;
   disconnect: () => void;
   onMessage: (handler: MessageHandler) => void;
@@ -122,7 +122,7 @@ export function usePeerConnection(): UsePeerConnectionReturn {
   }, [setupConnection]);
 
   const joinRoom = useCallback(
-    (hostId: string): Promise<void> => {
+    (hostId: string): Promise<string> => {
       return new Promise((resolve, reject) => {
         setStatus('connecting');
         setIsHost(false);
@@ -145,7 +145,8 @@ export function usePeerConnection(): UsePeerConnectionReturn {
 
           conn.on('open', () => {
             clearTimeout(timeoutId);
-            resolve();
+            // Return the peerId so caller can use it immediately
+            resolve(id);
           });
           conn.on('error', (err) => {
             clearTimeout(timeoutId);
