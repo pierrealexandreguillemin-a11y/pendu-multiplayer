@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { GlassCard } from '@/components/effects/glass-card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,14 @@ import {
 } from '@/components/ui/dialog';
 import type { ConnectionStatus } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
+
+/** Human-readable status labels - DRY: reusable map */
+const STATUS_LABELS: Record<ConnectionStatus, string> = {
+  disconnected: 'Non connecté',
+  connecting: 'Connexion...',
+  connected: 'Connecté',
+  error: 'Erreur de connexion',
+};
 
 interface CoopWaitingProps {
   peerId: string | null;
@@ -33,6 +41,7 @@ export function CoopWaiting({
   onQuit,
 }: CoopWaitingProps) {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const canStart = isHost && connectedPeers.length > 0;
 
   const getJoinUrl = (id: string) => {
     if (typeof window === 'undefined') return '';
@@ -40,53 +49,60 @@ export function CoopWaiting({
   };
 
   return (
-    <Card className="w-full max-w-md bg-white/10 border-white/20">
-      <CardHeader>
-        <CardTitle className="text-xl text-white text-center">
-          {isHost ? 'Partage ce code' : 'En attente...'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6 text-center">
-        {isHost && peerId && (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="p-3 bg-white rounded-xl">
-                <QRCodeSVG value={getJoinUrl(peerId)} size={160} level="M" />
-              </div>
+    <GlassCard className="p-8 max-w-md w-full text-center" spotlightColor="rgba(34, 197, 94, 0.15)">
+      <h2 className="text-xl font-bold text-white mb-6">
+        {isHost ? 'Partage ce code' : 'En attente...'}
+      </h2>
+
+      {isHost && peerId && (
+        <div className="space-y-4">
+          <div className="flex justify-center">
+            <div className="p-3 bg-white rounded-xl">
+              <QRCodeSVG value={getJoinUrl(peerId)} size={200} level="M" />
             </div>
-            <p className="text-gray-400 text-sm">Scanne pour rejoindre</p>
-
-            <details className="text-left">
-              <summary className="text-gray-400 text-xs cursor-pointer hover:text-gray-200">
-                Ou entre le code manuellement
-              </summary>
-              <div className="mt-2 p-2 bg-white/10 rounded text-center">
-                <p className="text-sm font-mono text-green-400 select-all break-all">{peerId}</p>
-              </div>
-            </details>
           </div>
-        )}
+          <p className="text-gray-400 text-sm">Scanne pour rejoindre</p>
 
-        {/* ISO/IEC 25010 - Clear player count with max limit */}
-        <div className="text-white">
-          <p>
-            Joueurs: {connectedPeers.length + 1}/{MAX_PLAYERS}
-          </p>
-          <p className="text-sm text-gray-400">Status: {status}</p>
+          <details className="text-left">
+            <summary className="text-gray-400 text-xs cursor-pointer hover:text-gray-200">
+              Ou entre le code manuellement
+            </summary>
+            <div className="mt-2 p-2 bg-white/10 rounded text-center">
+              <p className="text-sm font-mono text-green-400 select-all break-all">{peerId}</p>
+            </div>
+          </details>
         </div>
+      )}
 
-        {isHost && connectedPeers.length > 0 && (
-          <Button onClick={onStart} className="w-full bg-green-500 hover:bg-green-600" size="lg">
-            Lancer la partie!
-          </Button>
-        )}
+      <div className="text-white my-6">
+        <p>
+          Joueurs: {connectedPeers.length + 1}/{MAX_PLAYERS}
+        </p>
+        <p className="text-sm text-gray-400">{STATUS_LABELS[status]}</p>
+      </div>
 
-        <Button onClick={() => setShowQuitConfirm(true)} variant="destructive" size="sm">
-          Quitter
+      {isHost && (
+        <Button
+          onClick={onStart}
+          disabled={!canStart}
+          className="w-full bg-green-700 hover:bg-green-800 disabled:opacity-50 mb-4"
+          size="lg"
+        >
+          {canStart ? (
+            'Lancer la partie !'
+          ) : (
+            <span>
+              Lancer la partie
+              <span className="block text-xs font-normal opacity-75">En attente de joueurs...</span>
+            </span>
+          )}
         </Button>
-      </CardContent>
+      )}
 
-      {/* ISO/IEC 25065 - Confirmation before destructive action */}
+      <Button onClick={() => setShowQuitConfirm(true)} variant="destructive" size="sm">
+        Quitter
+      </Button>
+
       <Dialog open={showQuitConfirm} onOpenChange={setShowQuitConfirm}>
         <DialogContent className="bg-gray-800 border-gray-700">
           <DialogHeader>
@@ -107,6 +123,6 @@ export function CoopWaiting({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </GlassCard>
   );
 }
