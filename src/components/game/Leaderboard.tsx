@@ -80,9 +80,9 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
 
         {entries.length === 0 ? (
           <p className="text-gray-400 text-center py-8">
-            Aucun score enregistre.
+            Aucun score enregistré.
             <br />
-            Gagne une partie pour apparaitre ici !
+            Gagne une partie pour apparaître ici !
           </p>
         ) : (
           <div className="overflow-y-auto max-h-[50vh]">
@@ -117,7 +117,9 @@ export function Leaderboard({ mode, onClose, spotlightColor }: LeaderboardProps)
                       {entry.playerName}
                     </td>
                     <td className="py-2 text-right font-bold">{entry.score}</td>
-                    <td className="py-2 text-right text-sm">{entry.errors}/6</td>
+                    <td className="py-2 text-right text-sm">
+                      {entry.errors}/{entry.maxErrors ?? 6}
+                    </td>
                   </tr>
                 ))}
               </tbody>

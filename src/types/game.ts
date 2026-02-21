@@ -226,6 +226,8 @@ export interface LeaderboardEntry {
   word: string;
   /** Number of errors made */
   errors: number;
+  /** Maximum errors allowed for this game */
+  maxErrors?: number;
   /** Whether the player won */
   won: boolean;
   /** Difficulty level (optional for backward compatibility) */
