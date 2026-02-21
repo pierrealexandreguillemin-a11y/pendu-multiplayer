@@ -13,9 +13,8 @@ interface KeyboardProps {
 
 /**
  * Virtual keyboard for letter selection
- * Shows state of each letter (unused, correct, wrong)
- * ISO/IEC 25065 - Supports physical keyboard input
- * WCAG 2.1 - Touch targets minimum 44px
+ * WCAG 2.5.5 - Touch targets minimum 44px
+ * WCAG AA - Contrast ratios on correct/wrong states
  */
 export function Keyboard({
   correctLetters,
@@ -32,7 +31,7 @@ export function Keyboard({
     [correctLetters, wrongLetters]
   );
 
-  // Physical keyboard support (ISO/IEC 25065 - Efficience)
+  // Physical keyboard support
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (disabled) return;
@@ -49,29 +48,26 @@ export function Keyboard({
   }, [disabled, onLetterClick, getLetterState]);
 
   const getButtonClasses = (state: 'unused' | 'correct' | 'wrong'): string => {
-    // WCAG 2.1 AA - Touch targets: flex sizing for mobile responsiveness
-    // ISO/IEC 25065 - Usability: Responsive design for all screen sizes
     const base = `
-      flex-1 min-w-[30px] h-10 sm:h-12
+      flex-1 min-w-[36px] h-11 sm:h-12
       max-w-[44px] sm:max-w-[48px]
       flex items-center justify-center
       text-xs sm:text-base font-semibold
       rounded-md sm:rounded-lg
       transition-all duration-150
-      focus:outline-none focus:ring-2 focus:ring-offset-1 sm:focus:ring-offset-2
     `;
 
     switch (state) {
       case 'correct':
-        return `${base} bg-green-500 text-white cursor-not-allowed opacity-75`;
+        return `${base} bg-green-700 text-white cursor-not-allowed opacity-90`;
       case 'wrong':
-        return `${base} bg-red-500 text-white cursor-not-allowed opacity-75`;
+        return `${base} bg-red-700 text-white cursor-not-allowed opacity-90`;
       case 'unused':
-        return `${base} bg-gray-200 hover:bg-blue-500 hover:text-white active:scale-95 focus:ring-blue-500`;
+        return `${base} bg-gray-200 hover:bg-blue-600 hover:text-white active:scale-95`;
     }
   };
 
-  // AZERTY French keyboard layout (ISO/IEC 25065 - Efficience)
+  // AZERTY French keyboard layout
   const AZERTY_ROWS: Letter[][] = [
     ['A', 'Z', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
     ['Q', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M'],
@@ -79,34 +75,39 @@ export function Keyboard({
   ];
 
   return (
-    <div
-      className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-md mx-auto px-1"
-      role="group"
-      aria-label="Clavier virtuel AZERTY"
-    >
-      {AZERTY_ROWS.map((row, rowIndex) => (
-        <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1 w-full">
-          {row.map((letter) => {
-            const state = getLetterState(letter);
-            const isDisabled = disabled || state !== 'unused';
+    <div className="flex flex-col items-center gap-1 sm:gap-2 w-full max-w-md mx-auto px-1">
+      <div
+        className="flex flex-col items-center gap-1 sm:gap-2 w-full"
+        role="group"
+        aria-label="Clavier virtuel AZERTY"
+      >
+        {AZERTY_ROWS.map((row, rowIndex) => (
+          <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1 w-full">
+            {row.map((letter) => {
+              const state = getLetterState(letter);
+              const isDisabled = disabled || state !== 'unused';
 
-            return (
-              <button
-                key={letter}
-                onClick={() => !isDisabled && onLetterClick(letter)}
-                disabled={isDisabled}
-                className={getButtonClasses(state)}
-                aria-label={`Lettre ${letter}${
-                  state === 'correct' ? ', correct' : state === 'wrong' ? ', incorrect' : ''
-                }`}
-                aria-pressed={state !== 'unused'}
-              >
-                {letter}
-              </button>
-            );
-          })}
-        </div>
-      ))}
+              return (
+                <button
+                  key={letter}
+                  onClick={() => !isDisabled && onLetterClick(letter)}
+                  disabled={isDisabled}
+                  className={getButtonClasses(state)}
+                  aria-label={`Lettre ${letter}${
+                    state === 'correct' ? ', correct' : state === 'wrong' ? ', incorrect' : ''
+                  }`}
+                  aria-pressed={state !== 'unused'}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-gray-500 text-center mt-1 hidden sm:block">
+        Ton clavier physique fonctionne aussi
+      </p>
     </div>
   );
 }

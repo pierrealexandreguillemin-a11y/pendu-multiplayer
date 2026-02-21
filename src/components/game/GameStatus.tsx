@@ -20,7 +20,7 @@ interface GameStatusProps {
 
 /**
  * Shows game status: playing info or end game result
- * ISO/IEC 25010 - Usability: Clear feedback with difficulty support
+ * WCAG AA contrast: all text tested against dark glass background
  */
 export function GameStatus({
   status,
@@ -40,19 +40,19 @@ export function GameStatus({
     return (
       <div className="flex flex-col items-center gap-2 text-center">
         {showCategory && category && (
-          <p className="text-gray-600">
-            Catégorie : <span className="font-semibold text-blue-600">{category}</span>
+          <p className="text-gray-300">
+            Catégorie : <span className="font-semibold text-blue-400">{category}</span>
           </p>
         )}
-        <p className="text-lg">
+        <p className="text-gray-200 text-lg">
           Essais restants :{' '}
           <span
             className={`font-bold ${
               remainingAttempts <= Math.ceil(maxErrors * 0.25)
-                ? 'text-red-500'
+                ? 'text-red-400'
                 : remainingAttempts <= Math.ceil(maxErrors * 0.5)
-                  ? 'text-orange-500'
-                  : 'text-green-500'
+                  ? 'text-orange-400'
+                  : 'text-green-400'
             }`}
           >
             {remainingAttempts}
@@ -67,16 +67,16 @@ export function GameStatus({
   return (
     <div
       className={`
-        flex flex-col items-center gap-4 p-6 rounded-xl
-        ${isWin ? 'bg-green-100 border-2 border-green-300' : 'bg-red-100 border-2 border-red-300'}
+        flex flex-col items-center gap-4 p-6 rounded-xl border
+        ${isWin ? 'bg-green-500/15 border-green-500/40' : 'bg-red-500/15 border-red-500/40'}
       `}
       role="alert"
     >
-      <h2 className={`text-2xl sm:text-3xl font-bold ${isWin ? 'text-green-600' : 'text-red-600'}`}>
+      <h2 className={`text-2xl sm:text-3xl font-bold ${isWin ? 'text-green-400' : 'text-red-400'}`}>
         {isWin ? 'Bravo !' : 'Perdu !'}
       </h2>
 
-      <p className="text-gray-700">
+      <p className="text-gray-200">
         {isWin ? 'Tu as trouvé le mot !' : `Tu n'as pas trouvé le mot...`}
       </p>
 
@@ -87,10 +87,10 @@ export function GameStatus({
             <>
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🏆</span>
-                <span className="text-xl font-bold text-yellow-600">+{score} points</span>
+                <span className="text-xl font-bold text-yellow-400">+{score} points</span>
               </div>
               {sessionScore !== undefined && sessionScore > 0 && (
-                <span className="text-sm text-gray-600">Total session: {sessionScore + score}</span>
+                <span className="text-sm text-gray-300">Total session: {sessionScore + score}</span>
               )}
             </>
           ) : (
@@ -109,15 +109,14 @@ export function GameStatus({
       )}
 
       <div className="flex flex-col sm:flex-row gap-3 mt-2">
-        {/* GAME OVER (defeat): only back to menu - arcade style */}
+        {/* GAME OVER (defeat): only back to menu */}
         {!isWin && onBackToMenu && (
           <button
             onClick={onBackToMenu}
             className="
               px-6 py-3 rounded-lg font-semibold
-              bg-red-500 hover:bg-red-600 text-white
+              bg-red-600 hover:bg-red-700 text-white
               transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500
             "
           >
             Retour accueil
@@ -130,9 +129,8 @@ export function GameStatus({
             onClick={onPlayAgain}
             className="
               px-6 py-3 rounded-lg font-semibold
-              bg-green-500 hover:bg-green-600 text-white
+              bg-green-600 hover:bg-green-700 text-white
               transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
             "
           >
             Rejouer
@@ -145,9 +143,8 @@ export function GameStatus({
             onClick={onShowLeaderboard}
             className="
               px-6 py-3 rounded-lg font-semibold
-              bg-yellow-500 hover:bg-yellow-600 text-white
+              bg-yellow-600 hover:bg-yellow-700 text-white
               transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500
             "
           >
             Classement
@@ -160,9 +157,8 @@ export function GameStatus({
             onClick={onBackToMenu}
             className="
               px-6 py-3 rounded-lg font-semibold
-              bg-gray-200 hover:bg-gray-300 text-gray-700
+              bg-white/10 hover:bg-white/20 text-gray-200
               transition-all duration-150
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
             "
           >
             Menu

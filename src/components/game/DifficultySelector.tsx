@@ -43,8 +43,12 @@ export function DifficultySelector({ className }: DifficultySelectorProps) {
     <div className={cn('space-y-3', className)}>
       <label className="block text-sm text-gray-400 text-center">Difficulté</label>
 
-      {/* Segmented control */}
-      <div className="flex rounded-xl overflow-hidden border border-white/10">
+      {/* Segmented control - WCAG radiogroup pattern */}
+      <div
+        className="flex rounded-xl overflow-hidden border border-white/10"
+        role="radiogroup"
+        aria-label="Niveau de difficulté"
+      >
         {difficulties.map((diff) => {
           const config = DIFFICULTY_CONFIGS[diff];
           const colors = DIFFICULTY_COLORS[diff];
@@ -53,10 +57,11 @@ export function DifficultySelector({ className }: DifficultySelectorProps) {
           return (
             <button
               key={diff}
+              role="radio"
+              aria-checked={isSelected}
               onClick={() => setLevel(diff)}
               className={cn(
                 'flex-1 py-2 px-3 text-sm font-medium transition-all',
-                'focus:outline-none focus:ring-2 focus:ring-white/20',
                 isSelected
                   ? cn(colors.bg, colors.text, 'border-b-2', colors.border)
                   : 'text-gray-400 hover:text-white hover:bg-white/5'

@@ -190,6 +190,11 @@ export function BalloonDisplay({ errors, maxErrors = MAX_ERRORS }: BalloonDispla
           </motion.text>
         )}
       </svg>
+      {/* Screen reader live region for error count changes */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {clampedErrors > 0 &&
+          `${clampedErrors} erreur${clampedErrors > 1 ? 's' : ''}. ${balloonsRemaining} essai${balloonsRemaining > 1 ? 's' : ''} restant${balloonsRemaining > 1 ? 's' : ''}.`}
+      </div>
     </div>
   );
 }
