@@ -5,6 +5,7 @@ import { BalloonDisplay } from '@/components/game/BalloonDisplay';
 import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
+import { SoundToggle } from '@/components/ui/SoundToggle';
 import type { GameState, Letter, DisplayChar } from '@/types/game';
 import type { DifficultyConfig } from '@/types/difficulty';
 
@@ -40,11 +41,11 @@ export function SoloGameScreen({
 
   return (
     <GlassCard
-      className="p-6 sm:p-8 max-w-lg w-full"
+      className="p-4 sm:p-6 max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto"
       hoverScale={false}
       spotlightColor="rgba(59, 130, 246, 0.1)"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-white">Mode Solo</h1>
           <p className="text-sm text-gray-400">
@@ -52,7 +53,10 @@ export function SoloGameScreen({
             {wordsWon > 0 && <span className="ml-2">({wordsWon} mots)</span>}
           </p>
         </div>
-        <span className="text-blue-400 text-sm">{playerName}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-blue-400 text-sm">{playerName}</span>
+          <SoundToggle size="sm" />
+        </div>
       </div>
 
       <GameStatus
@@ -68,11 +72,11 @@ export function SoloGameScreen({
         onShowLeaderboard={onShowLeaderboard}
       />
 
-      <div className="my-6 text-white">
+      <div className="my-4 text-white">
         <BalloonDisplay errors={gameState.errors} maxErrors={gameState.maxErrors} />
       </div>
 
-      <div className="mb-8 text-white">
+      <div className="mb-4 text-white">
         <WordDisplay
           displayWord={displayWord}
           status={gameState.status}

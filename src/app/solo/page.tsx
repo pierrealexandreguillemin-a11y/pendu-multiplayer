@@ -13,7 +13,10 @@ export default function SoloPage() {
   const session = useSoloSession({ playerName });
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800">
+    <main
+      id="main-content"
+      className="min-h-dvh flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800 overflow-y-auto"
+    >
       {!session.gameState ? (
         <SoloStartScreen
           playerName={playerName}

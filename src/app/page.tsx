@@ -6,7 +6,15 @@ import { PageTransition } from '@/components/effects/page-transition';
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800">
+    <main
+      id="main-content"
+      className="min-h-dvh flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden"
+    >
+      {/* Animated background orbs for glassmorphism depth */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-indigo-900/30 blur-3xl animate-pulse" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-purple-900/20 blur-3xl animate-pulse [animation-delay:2s]" />
+      </div>
       <PageTransition>
         <GlassCard
           className="p-8 max-w-md w-full text-center"
@@ -22,7 +30,7 @@ export default function Home() {
               href="/solo"
               className="
                 group block w-full py-4 px-6
-                bg-blue-500 hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30
+                bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30
                 text-white text-xl font-semibold
                 rounded-xl
                 transition-all duration-200 hover:scale-[1.02]
@@ -40,7 +48,7 @@ export default function Home() {
               href="/coop"
               className="
                 group block w-full py-4 px-6
-                bg-green-500 hover:bg-green-600 hover:shadow-lg hover:shadow-green-500/30
+                bg-green-700 hover:bg-green-800 hover:shadow-lg hover:shadow-green-500/30
                 text-white text-xl font-semibold
                 rounded-xl
                 transition-all duration-200 hover:scale-[1.02]
@@ -58,7 +66,7 @@ export default function Home() {
               href="/pvp"
               className="
                 group block w-full py-4 px-6
-                bg-pink-500 hover:bg-pink-600 hover:shadow-lg hover:shadow-pink-500/30
+                bg-pink-700 hover:bg-pink-800 hover:shadow-lg hover:shadow-pink-500/30
                 text-white text-xl font-semibold
                 rounded-xl
                 transition-all duration-200 hover:scale-[1.02]

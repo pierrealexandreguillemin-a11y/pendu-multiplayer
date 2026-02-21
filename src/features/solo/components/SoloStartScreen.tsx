@@ -19,6 +19,8 @@ export function SoloStartScreen({
   onStart,
   onShowLeaderboard,
 }: SoloStartScreenProps) {
+  const canStart = playerName.trim().length > 0;
+
   return (
     <PageTransition>
       <GlassCard
@@ -31,25 +33,33 @@ export function SoloStartScreen({
         </p>
 
         <div className="space-y-4">
-          <Input
-            placeholder="Ton pseudo"
-            value={playerName}
-            onChange={(e) => onPlayerNameChange(e.target.value)}
-            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 text-center"
-          />
+          <div className="space-y-1">
+            <label htmlFor="solo-name" className="block text-sm text-gray-400">
+              Ton pseudo
+            </label>
+            <Input
+              id="solo-name"
+              placeholder="Ex: Marie"
+              value={playerName}
+              onChange={(e) => onPlayerNameChange(e.target.value)}
+              className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 text-center"
+              aria-required="true"
+            />
+          </div>
 
           <DifficultySelector className="my-4" />
 
           <button
             onClick={onStart}
-            disabled={!playerName.trim()}
-            className="w-full py-4 px-6 bg-blue-500 hover:bg-blue-600 disabled:opacity-50 text-white text-xl font-semibold rounded-xl transition-all"
+            disabled={!canStart}
+            className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xl font-semibold rounded-xl transition-all"
           >
             Commencer
           </button>
+          {!canStart && <p className="text-xs text-yellow-400">Entre ton pseudo pour commencer</p>}
           <button
             onClick={onShowLeaderboard}
-            className="w-full py-3 px-6 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 font-semibold rounded-xl transition-all"
+            className="w-full py-3 px-6 bg-white/5 hover:bg-white/10 border border-white/10 text-yellow-400 font-semibold rounded-xl transition-all"
           >
             Classement
           </button>
@@ -57,7 +67,7 @@ export function SoloStartScreen({
 
         <Link
           href="/"
-          className="inline-block mt-6 text-gray-400 hover:text-white transition-colors"
+          className="inline-block mt-6 text-gray-400 hover:text-white transition-colors py-2"
         >
           ← Retour au menu
         </Link>
