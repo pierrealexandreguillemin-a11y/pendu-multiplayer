@@ -45,6 +45,7 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
         score: sessionScore,
         word: `${wordsWon} mots`,
         errors: gameState.errors,
+        maxErrors: gameState.maxErrors,
         won: false,
         difficulty: gameState.difficulty,
       });
@@ -56,6 +57,7 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
     wordsWon,
     addEntry,
     gameState?.errors,
+    gameState?.maxErrors,
     gameState?.difficulty,
   ]);
 

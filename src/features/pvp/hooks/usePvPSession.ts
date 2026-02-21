@@ -120,12 +120,14 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
         score: sessionScore,
         word: `${wordsWon} mots`,
         errors: game.gameState.errors,
+        maxErrors: game.gameState.maxErrors,
         won: false,
       });
     }
   }, [
     game.gameState?.status,
     game.gameState?.errors,
+    game.gameState?.maxErrors,
     peer.isHost,
     playerName,
     sessionScore,
