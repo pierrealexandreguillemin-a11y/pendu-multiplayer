@@ -1,6 +1,6 @@
 # Décisions Infrastructure - Pendu Multijoueur
 
-> **Version**: 1.0 | **Date**: 2026-01-05
+> **Version**: 1.1 | **Date**: 2026-02-21
 > **Standard**: ISO/IEC 42010:2022 (Architecture Decision Records)
 
 ---
@@ -68,7 +68,7 @@
 │  Frontend (PWA)          Signaling            Communication    │
 │  ─────────────────       ─────────            ─────────────    │
 │  Vercel (gratuit)        PeerJS Cloud         WebRTC P2P       │
-│  Next.js 15              0.peerjs.com         Direct tel↔tel   │
+│  Next.js 16.1.6          0.peerjs.com         Direct tel↔tel   │
 │                          (gratuit)                              │
 │                                                                 │
 │  TOTAL: 0€ | CB: Non | Déploiement serveur: Aucun             │
@@ -133,8 +133,10 @@ Phone A ←──── WebRTC DataChannel ────→ Phone B
 |------|----------|--------|
 | 2026-01-05 | Render évalué | WebSocket supporté mais spin-down |
 | 2026-01-05 | Deno Deploy tenté | Échec déploiement CLI |
-| 2026-01-05 | **PeerJS Cloud retenu** | Simplicité, 0 déploiement, gratuit |
+| 2026-01-05 | **PeerJS Cloud retenu** | Simplicite, 0 deploiement, gratuit |
+| 2026-02-21 | Deploiement production | Vercel cdg1, 106 tests, PWA manifest |
 
 ---
 
-**Document approuvé pour implémentation**
+**Document approuve - architecture deployee en production**
+**URL Production**: https://pendu-nu.vercel.app

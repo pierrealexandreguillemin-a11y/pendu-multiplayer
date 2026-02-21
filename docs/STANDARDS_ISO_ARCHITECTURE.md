@@ -1,6 +1,6 @@
 # Standards ISO & Architecture - Pendu Multijoueur
 
-> **Version**: 1.1 | **Date**: 2026-01-07
+> **Version**: 1.2 | **Date**: 2026-02-21
 > **Standards**: ISO/IEC 25010, 25065, 29119, 5055, 12207, 42010
 
 ---
@@ -16,14 +16,14 @@
 │                                                                             │
 │    ┌─────────┐         ┌─────────────────┐         ┌─────────┐             │
 │    │ Joueur  │◄───────►│  Pendu PWA      │◄───────►│ Joueur  │             │
-│    │ Mobile  │  HTTP/  │  (Next.js +     │  WS     │ Mobile  │             │
-│    └─────────┘  WS     │   Socket.io)    │         └─────────┘             │
+│    │ Mobile  │  WebRTC │  (Next.js 16 +  │  WebRTC │ Mobile  │             │
+│    └─────────┘  P2P    │   PeerJS)       │  P2P    └─────────┘             │
 │                        └─────────────────┘                                  │
 │                               ▲                                             │
-│                               │ Local/Cloud                                 │
+│                               │ Signaling                                   │
 │                        ┌──────┴──────┐                                      │
-│                        │   Serveur   │                                      │
-│                        │  (Node.js)  │                                      │
+│                        │  PeerJS     │                                      │
+│                        │  Cloud      │                                      │
 │                        └─────────────┘                                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -42,26 +42,16 @@
 │         └────────────────┴────────────────┴────────────────┘               │
 │                                   │                                         │
 │                          ┌────────▼────────┐                               │
-│                          │   Socket.io     │                               │
-│                          │    Client       │                               │
+│                          │   PeerJS        │                               │
+│                          │   (WebRTC P2P)  │                               │
 │                          └────────┬────────┘                               │
 └──────────────────────────────────┬──────────────────────────────────────────┘
-                                   │ WebSocket
-┌──────────────────────────────────┼──────────────────────────────────────────┐
-│                              BACKEND                                        │
-├──────────────────────────────────┼──────────────────────────────────────────┤
-│                          ┌───────▼───────┐                                  │
-│                          │  Socket.io    │                                  │
-│                          │   Server      │                                  │
-│                          └───────┬───────┘                                  │
-│                                  │                                          │
-│         ┌────────────────────────┼────────────────────────┐                │
-│         │                        │                        │                │
-│  ┌──────▼──────┐         ┌───────▼───────┐        ┌──────▼──────┐         │
-│  │   Room      │         │    Game       │        │   Event     │         │
-│  │  Manager    │         │   Engine      │        │  Handlers   │         │
-│  └─────────────┘         └───────────────┘        └─────────────┘         │
-└─────────────────────────────────────────────────────────────────────────────┘
+                                   │ WebRTC DataChannel (P2P direct)
+                                   │
+                          ┌────────▼────────┐
+                          │  PeerJS Cloud   │  (signaling only)
+                          │  0.peerjs.com   │
+                          └─────────────────┘
 ```
 
 ---
@@ -88,8 +78,8 @@
 │  SRP: Fonctions pures, ZERO effet de bord                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                   INFRASTRUCTURE LAYER                          │
-│  Responsabilité: Communication externe (Socket, Storage)        │
-│  Fichiers: src/lib/socket.ts, server/**                         │
+│  Responsabilité: Communication externe (WebRTC, Storage)        │
+│  Fichiers: src/hooks/usePeerConnection.ts, src/lib/upstash-*    │
 │  SRP: Chaque module = 1 protocole/service externe               │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -142,12 +132,12 @@ namespace SessionContext {
 
 | Fichier | Responsabilité UNIQUE | Violations à éviter |
 |---------|----------------------|---------------------|
-| `game-engine.ts` | Calculs état jeu | PAS de Socket, PAS de React |
+| `game-engine.ts` | Calculs état jeu | PAS de WebRTC, PAS de React |
 | `useGameLogic.ts` | Bridge React ↔ Engine | PAS de fetch, PAS de UI |
-| `useSocket.ts` | Connexion Socket.io | PAS de logique jeu |
-| `useRoom.ts` | Gestion room multi | PAS de rendu |
+| `usePeerConnection.ts` | Connexion WebRTC P2P | PAS de logique jeu |
+| `useCoopSession.ts` | Session coop multi | PAS de rendu |
+| `usePvPSession.ts` | Session PvP multi | PAS de rendu |
 | `Keyboard.tsx` | Affichage clavier | PAS de logique métier |
-| `room-manager.ts` | CRUD rooms mémoire | PAS de validation jeu |
 
 ### 2.4 Dependency Rule (Clean Architecture)
 
@@ -170,7 +160,7 @@ RÈGLE: Les dépendances pointent VERS le centre (Domain)
 
 INTERDIT:
   ❌ game-engine.ts importe React
-  ❌ game-engine.ts importe Socket.io
+  ❌ game-engine.ts importe PeerJS
   ❌ types/*.ts importe des libs externes
 ```
 
@@ -188,33 +178,27 @@ INTERDIT:
 | **Performance** | Taille bundle | < 200KB (gzip) | next build |
 | **Couverture** | Lignes testées | > 80% global | Vitest |
 
-### 3.2 Règles ESLint Critiques
+### 3.2 Configuration ESLint (Flat Config)
 
 ```javascript
-// .eslintrc.js
-module.exports = {
-  extends: [
-    'next/core-web-vitals',
-    'plugin:@typescript-eslint/strict-type-checked',
-  ],
-  rules: {
-    // FIABILITÉ
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/no-unused-vars': 'error',
-    '@typescript-eslint/no-floating-promises': 'error',
-    'no-console': ['error', { allow: ['warn', 'error'] }],
+// eslint.config.mjs - ESLint 9 flat config
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
 
-    // SÉCURITÉ
-    'no-eval': 'error',
-    'no-implied-eval': 'error',
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([
+    '.next/**', 'out/**', 'build/**', 'next-env.d.ts',
+    'coverage/**', 'playwright-report/**',
+  ]),
+]);
 
-    // MAINTENABILITÉ
-    'complexity': ['error', { max: 8 }],
-    'max-depth': ['error', { max: 3 }],
-    'max-lines-per-function': ['error', { max: 50 }],
-    'max-lines': ['error', { max: 200 }],
-  }
-};
+export default eslintConfig;
+
+// Politique: `eslint --max-warnings 0`
+// Tout warning est bloquant en CI et pre-commit
 ```
 
 ### 3.3 Checklist Revue Code (PR)
@@ -252,20 +236,20 @@ module.exports = {
 │                                                                 │
 │  NIVEAU 1: Tests Unitaires (65%)                               │
 │  ─────────────────────────────                                 │
-│  Cible: game-engine.ts, validators.ts                          │
+│  Cible: game-engine.ts, words-difficulty.ts, difficulty-config  │
 │  Outil: Vitest                                                  │
-│  Couverture: 100% sur Domain Layer                             │
+│  Couverture: ~91% game-engine, 100% difficulty/words           │
 │                                                                 │
 │  NIVEAU 2: Tests Intégration (30%)                             │
 │  ────────────────────────────────                              │
-│  Cible: Hooks + Socket mocks                                   │
+│  Cible: Hooks + stores (Zustand)                               │
 │  Outil: Vitest + Testing Library                               │
 │  Couverture: 80% sur Application Layer                         │
 │                                                                 │
-│  NIVEAU 3: Tests E2E Manuels (5%)                              │
+│  NIVEAU 3: Tests E2E Playwright (5%)                            │
 │  ────────────────────────────────                              │
 │  Cible: Parcours utilisateur complets                          │
-│  Méthode: Laptop + 2 mobiles sur même réseau                   │
+│  Outil: Playwright (navigation, mode solo)                     │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -294,12 +278,17 @@ describe('GameEngine', () => {
   it('should_handle_single_letter_word');
 });
 
-// Tests Socket - OBLIGATOIRES
-describe('SocketHandlers', () => {
-  it('should_create_room_with_unique_code');
-  it('should_join_existing_room');
-  it('should_broadcast_letter_to_all_players');
-  it('should_handle_player_disconnect_gracefully');
+// Tests Stores & Difficulty - OBLIGATOIRES
+describe('LeaderboardStore', () => {
+  it('should_add_entry_to_leaderboard');
+  it('should_sort_by_score_descending');
+  it('should_persist_to_localStorage');
+});
+
+describe('DifficultyConfig', () => {
+  it('should_return_correct_max_errors_per_level');
+  it('should_apply_score_multiplier');
+  it('should_filter_words_by_difficulty');
 });
 ```
 
@@ -317,9 +306,10 @@ describe('SocketHandlers', () => {
 ## Couverture
 | Module | Lignes | Branches | Fonctions |
 |--------|--------|----------|-----------|
-| game-engine.ts | 100% | 100% | 100% |
-| hooks/* | 85% | 80% | 90% |
-| server/* | 75% | 70% | 80% |
+| game-engine.ts | ~91% | ~85% | ~95% |
+| difficulty-config.ts | 100% | 100% | 100% |
+| words-difficulty.ts | 100% | 100% | 100% |
+| stores/* | ~80% | ~75% | ~85% |
 
 ## Tests Échoués
 (Liste détaillée si applicable)
@@ -393,8 +383,8 @@ main ─────────────────────────
 │  OPTION B: SERVERLESS (Vercel/Netlify)                                     │
 │  ─────────────────────────────────────                                     │
 │  ⚠️  WebSocket NON SUPPORTÉ en serverless pur                              │
-│  ⚠️  Vercel Edge Functions: timeout 30s, pas de WS persistant              │
-│  ❌ NE CONVIENT PAS pour Socket.io                                         │
+│  ✅ Convient pour frontend + WebRTC P2P (pas de WS serveur)               │
+│  ✅ RETENU pour le frontend (Vercel)                                       │
 │                                                                             │
 │  OPTION C: PAAS AVEC WEBSOCKET (Render, Railway, Fly.io)                   │
 │  ────────────────────────────────────────────────────────                  │
@@ -405,45 +395,43 @@ main ─────────────────────────
 │  ⚠️  Fly.io: 3 VMs gratuites, bon pour WS                                  │
 │  ✅ Jeu à distance possible                                                 │
 │                                                                             │
-│  OPTION D: WEBRTC PEER-TO-PEER                                             │
+│  OPTION D: WEBRTC PEER-TO-PEER ← RETENU                                   │
 │  ─────────────────────────────────                                         │
 │  ✅ Pas de serveur permanent nécessaire                                    │
 │  ✅ Connexion directe entre téléphones                                     │
-│  ⚠️  Nécessite serveur STUN/TURN (gratuits existent)                       │
-│  ⚠️  Plus complexe à implémenter                                           │
+│  ✅ PeerJS Cloud gère signaling + STUN/TURN gratuitement                   │
+│  ✅ Implémenté via PeerJS (simplifie WebRTC)                               │
 │  ✅ Fonctionne même si laptop éteint (après connexion initiale)            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Recommandation Finale
+### 6.2 Architecture Déployée
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    🏆 RECOMMANDATION: HYBRIDE                               │
+│                    🏆 ARCHITECTURE PRODUCTION                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ARCHITECTURE RECOMMANDÉE:                                                  │
+│  1. FRONTEND PWA (Vercel, gratuit)                                         │
+│     └─ Next.js 16.1.6, build automatique depuis GitHub                     │
+│        • Production: https://pendu-nu.vercel.app                           │
+│        • Region: cdg1 (Paris)                                              │
 │                                                                             │
-│  1. SIGNALING SERVER (Gratuit sur Render/Fly.io)                           │
-│     └─ Petit serveur Node.js pour:                                         │
-│        • Création de rooms (génération codes)                              │
-│        • Échange initial WebRTC (signaling)                                │
-│        • Peut dormir entre les parties                                     │
+│  2. SIGNALING (PeerJS Cloud, 0.peerjs.com, gratuit)                        │
+│     └─ Zero infrastructure à déployer                                      │
+│        • Échange SDP/ICE entre peers                                       │
+│        • STUN/TURN inclus                                                  │
 │                                                                             │
-│  2. WEBRTC DATA CHANNELS (P2P direct)                                      │
+│  3. WEBRTC DATA CHANNELS (P2P direct via PeerJS)                           │
 │     └─ Communication directe téléphone ↔ téléphone                         │
-│        • Latence minimale                                                  │
-│        • Pas de serveur pendant la partie                                  │
-│        • Fonctionne sur réseaux différents (STUN/TURN)                     │
-│                                                                             │
-│  3. FALLBACK SOCKET.IO (si WebRTC échoue)                                  │
-│     └─ Pour réseaux restrictifs (NAT symétrique)                           │
+│        • Topologie étoile: host relaye aux guests                          │
+│        • Validation Zod sur tous les messages                              │
 │                                                                             │
 │  FLUX:                                                                      │
 │  ┌──────────┐      ┌──────────────┐      ┌──────────┐                      │
-│  │ Phone A  │─────►│   Signaling  │◄─────│ Phone B  │                      │
-│  └────┬─────┘      │   (Render)   │      └────┬─────┘                      │
+│  │ Phone A  │─────►│  PeerJS      │◄─────│ Phone B  │                      │
+│  └────┬─────┘      │  Cloud       │      └────┬─────┘                      │
 │       │            └──────────────┘           │                            │
 │       │                                       │                            │
 │       └───────────── WebRTC P2P ─────────────┘                             │
@@ -452,26 +440,19 @@ main ─────────────────────────
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 6.3 Stack Technique Mise à Jour
+### 6.3 Stack Technique Implémentée
 
 ```typescript
-// AVANT (Socket.io only)
-// ════════════════════════
-// - Dépendance serveur permanente
-// - Pas de jeu à distance sans cloud
+// STACK PRODUCTION (déployée)
+// ════════════════════════════
+import Peer from 'peerjs';  // WebRTC simplifié
 
-// APRÈS (WebRTC + Signaling)
-// ══════════════════════════
-import { PeerJS } from 'peerjs';  // Simplifie WebRTC
-
-// Signaling server (Render free tier)
-// - Express minimal
-// - PeerJS Server ou custom signaling
-// - Peut dormir, wake-up en 30s
-
-// Client PWA
-// - PeerJS client
-// - Fallback Socket.io si P2P échoue
+// Signaling: PeerJS Cloud (0.peerjs.com) - zero config
+// P2P: WebRTC DataChannels via PeerJS
+// Frontend: Next.js 16.1.6 sur Vercel
+// State: Zustand + localStorage
+// Validation: Zod sur messages P2P
+// Tests: Vitest (106 tests) + Playwright (E2E)
 ```
 
 ### 6.4 Comparatif Coûts
@@ -479,11 +460,12 @@ import { PeerJS } from 'peerjs';  // Simplifie WebRTC
 | Solution | Coût Mensuel | Latence | Jeu à Distance | Complexité |
 |----------|--------------|---------|----------------|------------|
 | Local only | 0€ | ~1ms | ❌ Non | ⭐ Simple |
-| Render (Socket.io) | 0€* | ~50-200ms | ✅ Oui | ⭐⭐ Moyen |
-| Fly.io (Socket.io) | 0€* | ~30-100ms | ✅ Oui | ⭐⭐ Moyen |
-| WebRTC + Signaling | 0€* | ~10-50ms | ✅ Oui | ⭐⭐⭐ Complexe |
+| Render (WebSocket) | 0€* | ~50-200ms | ✅ Oui | ⭐⭐ Moyen |
+| **PeerJS Cloud + Vercel** | **0€** | **~10-50ms** | **✅ Oui** | **⭐⭐ Moyen** |
+| Custom signaling + WebRTC | 0€* | ~10-50ms | ✅ Oui | ⭐⭐⭐ Complexe |
 
 *Free tier avec limitations (spin-down, quotas)
+**Solution retenue** : PeerJS Cloud + Vercel (0€, zero infra)
 
 ---
 
@@ -558,80 +540,32 @@ AVANTAGES POUR VOTRE CAS D'USAGE:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 7.3 Implémentation Simplifiée avec PeerJS
+### 7.3 Implémentation Réelle avec PeerJS
 
 ```typescript
-// lib/peer.ts - Abstraction WebRTC avec PeerJS
-import Peer, { DataConnection } from 'peerjs';
-
-// Configuration PeerJS (utilise serveur PeerJS gratuit par défaut)
-const PEER_CONFIG = {
-  // Option 1: Serveur PeerJS public (gratuit, mais pas garanti)
-  // host: '0.peerjs.com', port: 443, secure: true
-
-  // Option 2: Votre serveur sur Render (recommandé)
-  host: 'votre-app.onrender.com',
-  port: 443,
-  secure: true,
-  path: '/peerjs'
-};
+// src/hooks/usePeerConnection.ts - Hook WebRTC P2P
+// Utilise PeerJS Cloud (0.peerjs.com) - zero config serveur
 
 // Créer une room (hôte)
-export function createRoom(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const roomCode = generateRoomCode(); // "ABCD"
-    const peer = new Peer(roomCode, PEER_CONFIG);
-
-    peer.on('open', (id) => {
-      resolve(id); // Retourne le code room
-    });
-
-    peer.on('error', reject);
-  });
-}
-
-// Rejoindre une room
-export function joinRoom(roomCode: string): Promise<DataConnection> {
-  return new Promise((resolve, reject) => {
-    const peer = new Peer(PEER_CONFIG); // ID auto-généré
-
-    peer.on('open', () => {
-      const conn = peer.connect(roomCode, { reliable: true });
-      conn.on('open', () => resolve(conn));
-      conn.on('error', reject);
-    });
-  });
-}
-
-// Envoyer message de jeu
-export function sendGameMessage(conn: DataConnection, message: GameMessage) {
-  conn.send(JSON.stringify(message));
-}
-```
-
-### 7.4 Serveur Signaling Minimal (Render)
-
-```typescript
-// server/signaling.ts - Déployé sur Render (free tier)
-import express from 'express';
-import { ExpressPeerServer } from 'peer';
-
-const app = express();
-const server = app.listen(process.env.PORT || 9000);
-
-// PeerJS signaling server
-const peerServer = ExpressPeerServer(server, {
-  path: '/peerjs',
-  allow_discovery: true
+const peer = new Peer();  // ID auto-généré par PeerJS Cloud
+peer.on('open', (id) => {
+  // L'hôte partage son peerId (ex: "abc123xyz")
+  // Les guests se connectent avec cet ID
 });
 
-app.use('/', peerServer);
+// Rejoindre une room (guest)
+const conn = peer.connect(hostPeerId, { reliable: true });
+conn.on('open', () => {
+  // Connexion P2P établie, envoyer messages jeu
+  conn.send({ type: 'player_join', payload: { playerId, playerName } });
+});
 
-// Health check pour Render
-app.get('/health', (req, res) => res.send('OK'));
-
-// Le serveur peut dormir - PeerJS gère le wake-up
+// Topologie étoile: host reçoit de tous les guests et relaye
+// Validation Zod sur chaque message reçu (message-validation.ts)
 ```
+
+Note: Pas de serveur signaling custom. PeerJS Cloud (0.peerjs.com) gère
+le signaling, STUN et TURN gratuitement.
 
 ---
 
@@ -691,10 +625,10 @@ Mais pour une PWA, WebRTC reste la meilleure solution.
 │  APPROCHE: WebRTC P2P avec PeerJS                                          │
 │                                                                             │
 │  COMPOSANTS:                                                                │
-│  ├── Frontend: Next.js PWA (inchangé)                                      │
-│  ├── Signaling: PeerJS Server sur Render (free)                            │
+│  ├── Frontend: Next.js 16.1.6 PWA sur Vercel                              │
+│  ├── Signaling: PeerJS Cloud (0.peerjs.com, gratuit)                       │
 │  ├── P2P: WebRTC DataChannels via PeerJS                                   │
-│  └── Fallback: Socket.io sur même serveur Render (si P2P échoue)          │
+│  └── Leaderboard: Upstash Redis (optionnel)                               │
 │                                                                             │
 │  AVANTAGES:                                                                 │
 │  ✅ Jeu à distance (téléphones sur réseaux différents)                     │
@@ -704,9 +638,9 @@ Mais pour une PWA, WebRTC reste la meilleure solution.
 │  ✅ PWA installable sur mobiles                                            │
 │                                                                             │
 │  TRADE-OFFS:                                                                │
-│  ⚠️ Complexité légèrement supérieure                                       │
-│  ⚠️ Wake-up Render: 30-60s après inactivité                                │
-│  ⚠️ WebRTC peut échouer sur certains réseaux (fallback prévu)             │
+│  ⚠️ PeerJS Cloud pas garanti SLA (hobby/famille OK)                       │
+│  ⚠️ WebRTC peut échouer sur certains réseaux (NAT restrictif)             │
+│  ⚠️ Pas de fallback serveur (mode solo offline si P2P échoue)             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -714,16 +648,13 @@ Mais pour une PWA, WebRTC reste la meilleure solution.
 ### 9.2 Plan Implémentation Révisé
 
 ```
-PHASE 1: Game Engine + Solo (inchangé)
-PHASE 2: UI Composants (inchangé)
-PHASE 3: WebRTC Infrastructure ← NOUVEAU
-  └── PeerJS client setup
-  └── Signaling server (Render)
-  └── DataChannel protocol
-PHASE 4: Mode Coop via P2P
-PHASE 5: Mode PvP via P2P
-PHASE 6: Fallback Socket.io
-PHASE 7: PWA + Deploy
+PHASE 1: Game Engine (TDD)          ✅ FAIT
+PHASE 2: UI Composants              ✅ FAIT
+PHASE 3: Mode Solo                  ✅ FAIT
+PHASE 4: WebRTC P2P (PeerJS)        ✅ FAIT
+PHASE 5: Mode Coop multi (2-6)      ✅ FAIT
+PHASE 6: Mode PvP multi (2-6)       ✅ FAIT
+PHASE 7: PWA + Deploy Vercel        ✅ FAIT
 ```
 
 ---

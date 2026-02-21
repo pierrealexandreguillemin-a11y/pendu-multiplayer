@@ -1,8 +1,12 @@
 # Architecture Finale Pendu Multijoueur - 100% Gratuit sans CB
 
-> **Date**: 2026-01-05
+> **Version**: 1.1 | **Date**: 2026-02-21 (mise a jour post-implementation)
 > **Recherche**: Documentation officielle PeerJS, Render, Deno Deploy, Cloudflare
 > **Comptes existants**: Render (chess-app), Vercel (teamsync), MongoDB Atlas
+>
+> **Note**: Ce document est la spec pre-implementation. L'architecture reellement
+> deployee utilise **PeerJS Cloud** (Option C, section 6) et non Deno Deploy (Option B).
+> Voir `INFRASTRUCTURE_DECISIONS.md` pour le journal des decisions finales.
 
 ---
 
@@ -80,7 +84,7 @@
 │  FRONTEND (PWA)                                                             │
 │  ───────────────                                                            │
 │  Hébergement: Vercel (compte existant: teamsync-iota.vercel.app)           │
-│  Framework: Next.js 15                                                      │
+│  Framework: Next.js 16.1.6                                                      │
 │  ✅ Gratuit, pas de CB                                                      │
 │  ✅ Build automatique depuis GitHub                                         │
 │                                                                             │
@@ -96,7 +100,7 @@
 ```yaml
 Plateforme: Vercel
 Compte: teamsync-iota.vercel.app (existant)
-Framework: Next.js 15 + React 19
+Framework: Next.js 16.1.6 + React 19
 Deploy: Auto depuis GitHub (repo public possible)
 Coût: 0€
 ```
@@ -633,5 +637,9 @@ PHASE 7: PWA + Deploy ─────────────── Vercel + Den
 
 ---
 
-**Document validé pour implémentation**
-**Budget: 0€ | CB: Non requise | Téléphones à distance: ✅**
+**Document pre-implementation valide**
+**Budget: 0€ | CB: Non requise | Telephones a distance: ✅**
+
+> **Post-mortem**: L'option Deno Deploy a ete abandonnee (problemes CLI).
+> PeerJS Cloud (section 6) a ete retenu: zero infrastructure, zero config,
+> signaling + STUN/TURN inclus gratuitement. Production: https://pendu-nu.vercel.app

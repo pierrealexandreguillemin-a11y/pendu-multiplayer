@@ -27,7 +27,7 @@
 - Multijoueur P2P (WebRTC via PeerJS)
 - QR Code pour rejoindre facilement
 - Leaderboard local + cloud (Upstash Redis)
-- PWA installable
+- PWA installable (manifest + icones + apple-touch-icon)
 - Memorisation du pseudo
 
 ## Architecture
@@ -81,6 +81,10 @@ pendu/
 │       ├── game.ts          # GameState, GameMessage
 │       ├── room.ts          # Room, Player, MAX_PLAYERS
 │       └── difficulty.ts    # DifficultyLevel, config
+├── public/
+│   ├── manifest.json        # PWA manifest
+│   ├── icons/               # PWA icons (192, 512, apple-touch)
+│   └── sounds/              # Audio feedback (.ogg)
 ├── vercel.json              # Config deploiement
 ├── vitest.config.ts         # Config tests
 └── playwright.config.ts     # Config E2E
@@ -164,7 +168,7 @@ NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN=xxx
 | `npm run validate` | typecheck + lint + tests |
 | `npm run format` | Prettier format all |
 | `npm run format:check` | Prettier check (CI) |
-| `npm run e2e` | Tests Playwright |
+| `npm run test:e2e` | Tests Playwright |
 
 ## Tests
 
@@ -264,4 +268,4 @@ MIT
 
 ---
 
-**Developpe avec Claude Code (Opus 4.5)**
+**Developpe avec Claude Code (Opus 4.6)**

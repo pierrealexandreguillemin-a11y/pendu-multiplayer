@@ -1,9 +1,13 @@
-# Pendu Multijoueur PWA - Spécification Claude Code
+# Pendu Multijoueur PWA - Specification Claude Code
 
-> **Version**: 1.0 | **Date**: 2026-01-05
-> **Contexte**: Jeu local (LAN/Hotspot) - Laptop serveur + Mobiles clients
-> **Développeur**: Débutant-friendly, vibe coding
-> **Inspiré de**: Standards ISO/IEC 25010, 29119, 5055 (version allégée)
+> **Version**: 1.1 | **Date**: 2026-02-21 (mise a jour post-implementation)
+> **Contexte**: Jeu P2P WebRTC - PWA sur Vercel + PeerJS Cloud signaling
+> **Developpeur**: Debutant-friendly, vibe coding
+> **Inspire de**: Standards ISO/IEC 25010, 29119, 5055 (version allegee)
+>
+> **Note**: Ce document etait la spec initiale. L'architecture a evolue:
+> Socket.io → WebRTC P2P (PeerJS), serveur custom → PeerJS Cloud,
+> local-only → Vercel production (https://pendu-nu.vercel.app).
 
 ---
 
@@ -11,11 +15,11 @@
 
 **Objectif**: Jeu du pendu multijoueur PWA pour jouer en famille (voiture, maison).
 
-**Contraintes techniques**:
-- Réseau local uniquement (pas de déploiement cloud)
-- Auth simple sans persistence (pseudo temporaire)
-- Pas de leaderboard ni historique
-- PWA installable sur mobiles
+**Contraintes techniques initiales** (evoluees depuis):
+- ~~Reseau local uniquement~~ → Deploye sur Vercel + P2P WebRTC
+- Auth simple sans persistence (pseudo memorise localStorage)
+- ~~Pas de leaderboard~~ → Leaderboard local + cloud (Upstash Redis)
+- PWA installable sur mobiles ✅
 
 ---
 
@@ -76,96 +80,84 @@
 
 | Couche | Techno | Raison |
 |--------|--------|--------|
-| Frontend | Next.js 15 + React 19 | Confort dev, PWA native |
-| Styling | Tailwind CSS | Rapid prototyping |
-| Real-time | Socket.io | Multijoueur synchronisé |
-| Backend | Node.js (intégré Next.js API routes + serveur custom) | Simplicité |
-| State | Zustand | Léger, simple |
-| Validation | Zod | Type-safe, runtime checks |
-| Tests | Vitest + Testing Library | Rapide, moderne |
+| Frontend | Next.js 16.1.6 + React 19.2.3 | Confort dev, PWA native |
+| Styling | Tailwind CSS 4.x | Rapid prototyping |
+| Real-time | PeerJS (WebRTC P2P) | Multijoueur sans serveur |
+| Animations | Framer Motion 12.x | Ballons, transitions |
+| State | Zustand 5.x | Leger, simple |
+| Validation | Zod 4.x | Type-safe, runtime checks |
+| Tests | Vitest 4.x + Playwright 1.57 | Unitaires + E2E |
 
 ### Structure Projet
 
 ```
-pendu-multiplayer/
+pendu/
 ├── .github/
-│   └── copilot-instructions.md    # CE FICHIER (instructions IA)
+│   ├── workflows/ci.yml            # CI/CD 6 quality gates
+│   └── dependabot.yml              # Auto-update dependencies
+│
+├── docs/                            # Documentation ISO
+│   ├── STANDARDS_ISO_ARCHITECTURE.md
+│   ├── ARCHITECTURE_FINALE_REALISABLE.md
+│   ├── INFRASTRUCTURE_DECISIONS.md
+│   └── CLAUDE_CODE_SPEC_pendu.md   # CE FICHIER
 │
 ├── src/
-│   ├── app/                        # Next.js App Router
-│   │   ├── layout.tsx              # Layout global + providers
-│   │   ├── page.tsx                # Accueil (choix mode + pseudo)
-│   │   ├── solo/
-│   │   │   └── page.tsx            # Mode PvE Solo
-│   │   ├── coop/
-│   │   │   ├── page.tsx            # Lobby création/join
-│   │   │   └── [roomId]/
-│   │   │       └── page.tsx        # Partie coop en cours
-│   │   └── pvp/
-│   │       ├── page.tsx            # Lobby création/join
-│   │       └── [roomId]/
-│   │           └── page.tsx        # Partie PvP en cours
+│   ├── app/                         # PRESENTATION - Next.js App Router
+│   │   ├── layout.tsx               # Layout global + PWA metadata
+│   │   ├── page.tsx                 # Menu principal
+│   │   ├── solo/page.tsx            # Mode solo
+│   │   ├── coop/page.tsx            # Mode cooperatif
+│   │   └── pvp/page.tsx             # Mode PvP
 │   │
-│   ├── components/                  # UI réutilisables
-│   │   ├── game/
-│   │   │   ├── HangmanDrawing.tsx  # SVG du pendu (6 états)
-│   │   │   ├── WordDisplay.tsx     # Affichage "_ A _ _ E"
-│   │   │   ├── Keyboard.tsx        # Clavier virtuel A-Z
-│   │   │   ├── GameStatus.tsx      # Victoire/Défaite/En cours
-│   │   │   └── PlayerList.tsx      # Liste joueurs (multi)
-│   │   ├── lobby/
-│   │   │   ├── CreateRoom.tsx      # Formulaire création
-│   │   │   ├── JoinRoom.tsx        # Formulaire rejoindre
-│   │   │   └── WaitingRoom.tsx     # Attente joueurs
-│   │   └── ui/
-│   │       ├── Button.tsx
-│   │       ├── Input.tsx
-│   │       └── Modal.tsx
+│   ├── components/                   # PRESENTATION - Composants UI
+│   │   ├── game/                    # BalloonDisplay, Keyboard, Leaderboard
+│   │   ├── ui/                      # shadcn/ui (Button, Dialog, Input)
+│   │   └── effects/                 # Glassmorphism, animations
 │   │
-│   ├── hooks/                       # Logique métier (TESTABLE)
-│   │   ├── useGameLogic.ts         # Logique pendu pure
-│   │   ├── useSocket.ts            # Connexion Socket.io
-│   │   ├── useRoom.ts              # Gestion room multi
-│   │   └── usePlayer.ts            # État joueur local
+│   ├── features/                     # APPLICATION - Feature modules
+│   │   ├── solo/                    # hooks + components solo
+│   │   ├── coop/                    # hooks (useCoopSession) + components
+│   │   └── pvp/                     # hooks (usePvPSession) + components
 │   │
-│   ├── lib/                         # Utilitaires
-│   │   ├── words.ts                # Liste mots français
-│   │   ├── socket.ts               # Config client Socket.io
-│   │   ├── game-engine.ts          # Logique pure (testable)
-│   │   └── validators.ts           # Schemas Zod
+│   ├── hooks/                        # APPLICATION - Hooks partages
+│   │   ├── useGameLogic.ts          # Bridge React <-> Game Engine
+│   │   ├── usePeerConnection.ts     # WebRTC P2P via PeerJS
+│   │   ├── usePlayerName.ts         # Memorisation pseudo
+│   │   └── useSound.ts             # Audio feedback
 │   │
-│   ├── stores/                      # État global Zustand
-│   │   ├── gameStore.ts            # État partie en cours
-│   │   └── playerStore.ts          # Pseudo, préférences
+│   ├── lib/                          # DOMAIN + INFRASTRUCTURE
+│   │   ├── game-engine.ts           # Logique metier pure (0 dependance)
+│   │   ├── words.ts                 # 200+ mots francais
+│   │   ├── words-difficulty.ts      # Calcul difficulte mots
+│   │   ├── difficulty-config.ts     # Configuration niveaux
+│   │   ├── message-validation.ts    # Validation Zod P2P
+│   │   ├── upstash-client.ts        # Cloud leaderboard
+│   │   └── session-memory.ts        # Persistence locale
 │   │
-│   └── types/                       # Types TypeScript
-│       ├── game.ts                 # GameState, Letter, etc.
-│       ├── player.ts               # Player, Room
-│       └── socket-events.ts        # Events Socket.io typés
-│
-├── server/                          # Serveur Socket.io custom
-│   ├── index.ts                    # Entry point serveur
-│   ├── socket-handlers.ts          # Handlers événements
-│   └── room-manager.ts             # Gestion rooms en mémoire
+│   ├── stores/                       # APPLICATION - State Zustand
+│   │   ├── leaderboard.ts           # Leaderboard + localStorage
+│   │   └── difficulty.ts            # Preferences difficulte
+│   │
+│   └── types/                        # DOMAIN - Types TypeScript
+│       ├── game.ts                  # GameState, GameMessage, Letter
+│       ├── room.ts                  # Room, Player, MAX_PLAYERS
+│       └── difficulty.ts            # DifficultyLevel, config
 │
 ├── public/
-│   ├── manifest.json               # PWA manifest
-│   ├── sw.js                       # Service Worker
-│   └── icons/                      # Icônes PWA
+│   ├── manifest.json                # PWA manifest
+│   ├── icons/                       # PWA icons (192, 512, apple-touch)
+│   └── sounds/                      # Audio feedback (.ogg)
 │
-├── __tests__/                       # Tests (miroir src/)
-│   ├── lib/
-│   │   └── game-engine.test.ts
-│   ├── hooks/
-│   │   └── useGameLogic.test.ts
-│   └── components/
-│       └── Keyboard.test.tsx
+├── __tests__/                        # Tests unitaires Vitest
+│   ├── lib/                         # game-engine, difficulty, words
+│   └── stores/                      # leaderboard, difficulty stores
 │
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
+├── e2e/                              # Tests E2E Playwright
 ├── vitest.config.ts
-└── next.config.js
+├── playwright.config.ts
+├── eslint.config.mjs                # ESLint 9 flat config
+└── package.json
 ```
 
 ---
@@ -213,14 +205,14 @@ pendu-multiplayer/
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  MANUEL (5%)        Test sur vrais devices              │
-│                     Laptop + Mobile en WiFi             │
+│  E2E (5%)           Playwright (navigation, solo)       │
+│                     npm run test:e2e                     │
 ├─────────────────────────────────────────────────────────┤
-│  INTEGRATION (30%)  Hooks + Socket mocks                │
-│                     Vitest + MSW                        │
+│  INTEGRATION (30%)  Hooks + stores                      │
+│                     Vitest + Testing Library             │
 ├─────────────────────────────────────────────────────────┤
-│  UNIT (65%)         game-engine.ts 100% couvert         │
-│                     Pure functions, pas d'effets        │
+│  UNIT (65%)         game-engine ~91%, difficulty 100%   │
+│                     106 tests, pure functions            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -269,201 +261,124 @@ Exemples:
 - should_reject_letter_when_already_guessed
 ```
 
-### Coverage Cible
+### Coverage Actuelle
 
-| Module | Coverage Min |
-|--------|--------------|
-| `lib/game-engine.ts` | 100% |
-| `hooks/*` | 80% |
-| `components/*` | 60% |
-| `server/*` | 70% |
+| Module | Coverage |
+|--------|----------|
+| `lib/game-engine.ts` | ~91% |
+| `lib/difficulty-config.ts` | 100% |
+| `lib/words-difficulty.ts` | 100% |
+| `stores/*` | ~80% |
+| Global | > 80% |
 
 ---
 
-## 🔌 Socket.io Events
+## 🔌 Messages P2P (WebRTC via PeerJS)
 
-### Types (source unique de vérité)
+### Types (source unique de verite)
 
 ```typescript
-// src/types/socket-events.ts
+// src/types/game.ts - GameMessage union type
+// Valides par Zod dans src/lib/message-validation.ts
 
-// Client → Server
-interface ClientToServerEvents {
-  'room:create': (data: { playerName: string; mode: GameMode }) => void;
-  'room:join': (data: { roomCode: string; playerName: string }) => void;
-  'room:leave': () => void;
-  'game:start': (data: { word?: string }) => void;  // word pour PvP
-  'game:guess': (data: { letter: string }) => void;
-  'game:restart': () => void;
-}
+type GameMessage =
+  | { type: 'start'; payload: { word: string; category: string } }
+  | { type: 'guess'; payload: { letter: Letter } }
+  | { type: 'restart'; payload: Record<string, never> }
+  | { type: 'state'; payload: Record<string, never> }
+  | { type: 'player_join'; payload: { playerId: string; playerName: string } }
+  | { type: 'players_update'; payload: { players: PlayerInfo[]; currentTurnIndex: number } }
+  | { type: 'turn_change'; payload: { currentTurnIndex: number; currentPlayerId: string } };
 
-// Server → Client
-interface ServerToClientEvents {
-  'room:created': (data: { roomCode: string; roomId: string }) => void;
-  'room:joined': (data: { room: RoomState }) => void;
-  'room:player-joined': (data: { player: Player }) => void;
-  'room:player-left': (data: { playerId: string }) => void;
-  'room:error': (data: { message: string }) => void;
-  'game:started': (data: { gameState: GameState }) => void;
-  'game:letter-result': (data: { letter: string; correct: boolean; gameState: GameState }) => void;
-  'game:ended': (data: { victory: boolean; word: string }) => void;
-}
+// Topologie: etoile (host relaye aux guests)
+// Host recoit de tous les guests via DataConnection
+// Host broadcast a tous les guests
 ```
 
 ---
 
 ## 📱 PWA Configuration
 
-### manifest.json
+### manifest.json (deploye)
 
 ```json
 {
-  "name": "Pendu Multijoueur",
+  "id": "/",
+  "name": "Pendu - Jeu du Pendu Multijoueur",
   "short_name": "Pendu",
-  "description": "Jeu du pendu en famille",
+  "description": "Jeu du pendu en ligne multijoueur. Jouez seul, en coop ou en PvP avec vos amis !",
+  "lang": "fr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#3b82f6",
+  "theme_color": "#1f2937",
+  "background_color": "#111827",
+  "orientation": "portrait",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+    { "src": "/icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "categories": ["games", "entertainment"]
 }
 ```
 
-### Service Worker (basique)
+### Service Worker
 
-```javascript
-// public/sw.js
-const CACHE_NAME = 'pendu-v1';
-const STATIC_ASSETS = ['/', '/solo', '/coop', '/pvp'];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  );
-});
-
-self.addEventListener('fetch', (event) => {
-  // Network-first pour les pages, cache-first pour les assets
-});
-```
+Pas de service worker custom. Next.js + Vercel gerent le caching CDN.
+Le manifest seul suffit pour rendre l'app installable.
 
 ---
 
-## 🚀 Déploiement Local
+## 🚀 Deploiement
 
-### Setup Réseau
+### Architecture Production
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    LAPTOP (Serveur)                      │
-│  ┌─────────────────────────────────────────────────┐    │
-│  │  npm run dev                                     │    │
-│  │  → Next.js: http://localhost:3000               │    │
-│  │  → Socket.io: ws://localhost:3001               │    │
-│  └─────────────────────────────────────────────────┘    │
-│                         │                                │
-│              WiFi / Hotspot Mobile                       │
-│                         │                                │
-└─────────────────────────┼───────────────────────────────┘
-                          │
-        ┌─────────────────┼─────────────────┐
-        │                 │                 │
-   ┌────▼────┐      ┌────▼────┐      ┌────▼────┐
-   │ Mobile 1│      │ Mobile 2│      │ Mobile 3│
-   │  (PWA)  │      │  (PWA)  │      │  (PWA)  │
-   └─────────┘      └─────────┘      └─────────┘
-   
-   URL: http://192.168.1.XX:3000 (IP locale laptop)
+│  Vercel (CDN Paris cdg1)                                │
+│  https://pendu-nu.vercel.app                            │
+│  Next.js 16.1.6 PWA                                    │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+    ┌─────────────┼─────────────┐
+    │             │             │
+┌───▼───┐   ┌───▼───┐   ┌───▼───┐
+│Phone A│   │Phone B│   │Phone C│
+│ (PWA) │   │ (PWA) │   │ (PWA) │
+└───┬───┘   └───┬───┘   └───┬───┘
+    │           │           │
+    └───── WebRTC P2P ─────┘
+         (via PeerJS Cloud)
 ```
 
 ### Commandes
 
 ```bash
-# Développement
-npm run dev              # Next.js + Socket.io
+# Developpement
+npm run dev              # Next.js + Turbopack
 
-# Trouver IP locale (pour mobiles)
-# Windows: ipconfig | findstr IPv4
-# Mac/Linux: ifconfig | grep inet
+# Validation complete
+npm run validate         # typecheck + lint + tests
 
-# Production locale
+# Build production
 npm run build
-npm run start
 ```
 
 ---
 
 ## 📋 Checklist Développement
 
-### Avant Coder (Setup)
+### Phases d'Implementation (toutes completees)
 
 ```
-[ ] npm create next-app@latest pendu-multiplayer
-[ ] Configurer TypeScript strict
-[ ] Installer dépendances (socket.io, zustand, zod, tailwind)
-[ ] Configurer ESLint + Prettier
-[ ] Créer structure dossiers
-[ ] Écrire types de base (game.ts, player.ts, socket-events.ts)
-```
-
-### Phase 1: Game Engine (TDD)
-
-```
-[ ] Écrire tests game-engine.test.ts
-[ ] Implémenter game-engine.ts (faire passer tests)
-[ ] 100% coverage sur game-engine.ts
-```
-
-### Phase 2: Mode Solo (sans Socket)
-
-```
-[ ] Composant HangmanDrawing (SVG)
-[ ] Composant WordDisplay
-[ ] Composant Keyboard
-[ ] Hook useGameLogic
-[ ] Page /solo fonctionnelle
-[ ] Liste mots français (words.ts)
-```
-
-### Phase 3: Infrastructure Multi
-
-```
-[ ] Serveur Socket.io (server/index.ts)
-[ ] Room manager (server/room-manager.ts)
-[ ] Hook useSocket
-[ ] Hook useRoom
-[ ] Types events Socket.io
-```
-
-### Phase 4: Mode Coop
-
-```
-[ ] Lobby création/join room
-[ ] Page /coop/[roomId]
-[ ] Synchronisation état jeu
-[ ] Gestion déconnexions
-```
-
-### Phase 5: Mode PvP
-
-```
-[ ] Interface maître du mot
-[ ] Validation mot secret
-[ ] Tour par tour devineurs
-[ ] Page /pvp/[roomId]
-```
-
-### Phase 6: PWA + Polish
-
-```
-[ ] manifest.json
-[ ] Service Worker
-[ ] Test installation mobile
-[ ] Responsive design
-[ ] Animations (victoire/défaite)
+[x] Phase 1: Game Engine (TDD) - game-engine.ts, 106 tests
+[x] Phase 2: UI Composants - BalloonDisplay, Keyboard AZERTY, Glassmorphism
+[x] Phase 3: Mode Solo - /solo, difficulte, leaderboard
+[x] Phase 4: WebRTC P2P - PeerJS, usePeerConnection.ts
+[x] Phase 5: Mode Coop - /coop, 2-6 joueurs, tours
+[x] Phase 6: Mode PvP - /pvp, host choisit mot, guests devinent
+[x] Phase 7: PWA + Deploy - manifest.json, icons, Vercel production
 ```
 
 ---
@@ -514,7 +429,7 @@ npm run start
 
 ```bash
 feat(game): add letter checking logic
-fix(socket): handle disconnection gracefully
+fix(multiplayer): handle disconnection gracefully
 test(engine): add victory detection tests
 refactor(hooks): extract game logic to useGameLogic
 style(ui): improve keyboard layout mobile
@@ -526,11 +441,13 @@ docs(readme): add deployment instructions
 ## 📚 Ressources
 
 - [Next.js App Router](https://nextjs.org/docs/app)
-- [Socket.io Docs](https://socket.io/docs/v4/)
+- [PeerJS Docs](https://peerjs.com/docs/)
 - [Zustand](https://github.com/pmndrs/zustand)
 - [Vitest](https://vitest.dev/)
-- [PWA avec Next.js](https://github.com/vercel/next.js/tree/canary/examples/with-pwa)
+- [Playwright](https://playwright.dev/)
+- [Framer Motion](https://www.framer.com/motion/)
 
 ---
 
-**Dernière màj**: 2026-01-05
+**Derniere maj**: 2026-02-21
+**Developpe avec Claude Code (Opus 4.6)**
