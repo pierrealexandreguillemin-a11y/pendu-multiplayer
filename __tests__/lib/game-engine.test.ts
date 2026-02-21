@@ -76,6 +76,17 @@ describe('GameEngine', () => {
       expect(state.word).toBe('CAFE');
       expect(state.originalWord).toBe('café');
     });
+
+    it('should_reject_words_shorter_than_2_characters', () => {
+      expect(() => createGame({ word: 'A' })).toThrow('Word must be at least 2 characters');
+      expect(() => createGame({ word: '' })).toThrow('Word must be at least 2 characters');
+      expect(() => createGame({ word: ' ' })).toThrow('Word must be at least 2 characters');
+    });
+
+    it('should_accept_words_of_2_characters_or_more', () => {
+      expect(() => createGame({ word: 'AB' })).not.toThrow();
+      expect(() => createGame({ word: 'Pendu' })).not.toThrow();
+    });
   });
 
   describe('getDisplayWord', () => {
@@ -208,13 +219,16 @@ describe('GameEngine', () => {
     });
 
     it('should_return_true_when_won', () => {
-      const state = createGame({ word: 'A' });
-      const result = guessLetter(state, 'A');
-      expect(isGameOver(result.state)).toBe(true);
+      const state = createGame({ word: 'AB' });
+      let current = state;
+      for (const l of ['A', 'B'] as Letter[]) {
+        current = guessLetter(current, l).state;
+      }
+      expect(isGameOver(current)).toBe(true);
     });
 
     it('should_return_true_when_lost', () => {
-      let state = createGame({ word: 'Z' });
+      let state = createGame({ word: 'ZY' });
       const wrongLetters: Letter[] = ['A', 'B', 'C', 'D', 'E', 'F'];
 
       for (const letter of wrongLetters) {
@@ -240,10 +254,12 @@ describe('GameEngine', () => {
     });
 
     it('should_return_false_when_game_is_over', () => {
-      const state = createGame({ word: 'A' });
-      const result = guessLetter(state, 'A');
-
-      expect(canGuess(result.state, 'B')).toBe(false);
+      const state = createGame({ word: 'AB' });
+      let current = state;
+      for (const l of ['A', 'B'] as Letter[]) {
+        current = guessLetter(current, l).state;
+      }
+      expect(canGuess(current, 'C')).toBe(false);
     });
   });
 

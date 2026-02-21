@@ -42,6 +42,12 @@ export function toLetter(char: string): Letter {
  * Supports difficulty-based maxErrors
  */
 export function createGame(config: GameConfig): GameState {
+  // ISO/IEC 25010 - Reliability: Validate word at engine level (defense in depth)
+  const trimmedWord = config.word.trim();
+  if (trimmedWord.length < 2) {
+    throw new Error('Word must be at least 2 characters');
+  }
+
   // Determine maxErrors: explicit > difficulty config > default
   let maxErrors = MAX_ERRORS;
   if (config.maxErrors !== undefined) {
