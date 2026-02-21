@@ -1,9 +1,16 @@
 /**
  * Playwright E2E Test Configuration
  * ISO/IEC 29119 - Software Testing Standards
+ *
+ * Usage:
+ *   npm run test:e2e                                          # local dev server
+ *   E2E_BASE_URL=https://pendu-nu.vercel.app npm run test:e2e # production
  */
 
 import { defineConfig, devices } from '@playwright/test';
+
+const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000';
+const isExternal = !!process.env.E2E_BASE_URL;
 
 export default defineConfig({
   testDir: './e2e',
@@ -16,7 +23,7 @@ export default defineConfig({
     ['junit', { outputFile: 'playwright-report/results.xml' }],
   ],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -32,10 +39,13 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // Skip local dev server when testing against external URL
+  ...(!isExternal && {
+    webServer: {
+      command: 'npm run dev',
+      url: 'http://localhost:3000',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  }),
 });

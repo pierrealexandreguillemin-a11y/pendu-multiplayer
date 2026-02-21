@@ -11,7 +11,7 @@ test.describe('Solo Mode', () => {
   });
 
   test('should display difficulty selector', async ({ page }) => {
-    await expect(page.getByText(/facile|normal|difficile/i)).toBeVisible();
+    await expect(page.getByText(/difficulté/i)).toBeVisible();
   });
 
   test('should display player name input', async ({ page }) => {
@@ -23,7 +23,7 @@ test.describe('Solo Mode', () => {
     await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
 
     // Click play button
-    await page.getByRole('button', { name: /jouer/i }).click();
+    await page.getByRole('button', { name: /commencer/i }).click();
 
     // Should show game elements
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
@@ -31,7 +31,7 @@ test.describe('Solo Mode', () => {
 
   test('should show AZERTY keyboard layout', async ({ page }) => {
     await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
-    await page.getByRole('button', { name: /jouer/i }).click();
+    await page.getByRole('button', { name: /commencer/i }).click();
 
     // AZERTY first row starts with A, Z, E, R, T, Y
     const keyboard = page.getByRole('group', { name: /clavier/i });
@@ -44,7 +44,7 @@ test.describe('Solo Mode', () => {
 
   test('should update keyboard on letter click', async ({ page }) => {
     await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
-    await page.getByRole('button', { name: /jouer/i }).click();
+    await page.getByRole('button', { name: /commencer/i }).click();
 
     // Wait for keyboard
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
@@ -59,7 +59,7 @@ test.describe('Solo Mode', () => {
 
   test('should support physical keyboard input', async ({ page }) => {
     await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
-    await page.getByRole('button', { name: /jouer/i }).click();
+    await page.getByRole('button', { name: /commencer/i }).click();
 
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 
@@ -72,9 +72,9 @@ test.describe('Solo Mode', () => {
 
   test('should show balloon display', async ({ page }) => {
     await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
-    await page.getByRole('button', { name: /jouer/i }).click();
+    await page.getByRole('button', { name: /commencer/i }).click();
 
-    // Balloons should be visible (SVG elements)
-    await expect(page.locator('svg').first()).toBeVisible({ timeout: 5000 });
+    // Balloons should be visible
+    await expect(page.getByRole('img', { name: /ballon/i })).toBeVisible({ timeout: 5000 });
   });
 });
