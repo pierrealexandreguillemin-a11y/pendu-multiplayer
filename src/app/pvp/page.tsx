@@ -39,7 +39,10 @@ function PvPContent() {
   });
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800">
+    <main
+      id="main-content"
+      className="min-h-dvh flex flex-col items-center justify-center p-4 bg-gradient-to-b from-gray-900 to-gray-800 overflow-y-auto"
+    >
       {session.phase === 'lobby' && (
         <PvPLobby
           playerName={playerName}
@@ -80,11 +83,12 @@ function PvPContent() {
           gameState={session.gameState}
           displayWord={session.displayWord}
           isHost={session.isHost}
-          status={session.status}
           connectedPeers={session.connectedPeers}
           sessionScore={session.sessionScore}
           wordsWon={session.wordsWon}
           wordScore={session.wordScore}
+          isMyTurn={session.isMyTurn}
+          currentGuesserName={session.currentGuesser?.name ?? null}
           onGuess={session.handleGuess}
           onContinue={session.continueSession}
           onQuit={session.endSession}

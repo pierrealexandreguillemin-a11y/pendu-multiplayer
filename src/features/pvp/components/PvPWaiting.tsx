@@ -15,6 +15,14 @@ import {
 import type { ConnectionStatus } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
 
+/** Human-readable status labels */
+const STATUS_LABELS: Record<ConnectionStatus, string> = {
+  disconnected: 'Non connecté',
+  connecting: 'Connexion...',
+  connected: 'Connecté',
+  error: 'Erreur de connexion',
+};
+
 interface PvPWaitingProps {
   peerId: string | null;
   isHost: boolean;
@@ -33,6 +41,7 @@ export function PvPWaiting({
   onQuit,
 }: PvPWaitingProps) {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const canStart = isHost && connectedPeers.length > 0;
 
   const getJoinUrl = (id: string) => {
     if (typeof window === 'undefined') return '';
@@ -52,7 +61,7 @@ export function PvPWaiting({
         <div className="space-y-4 mb-6">
           <div className="flex justify-center">
             <div className="p-3 bg-white rounded-xl">
-              <QRCodeSVG value={getJoinUrl(peerId)} size={140} level="M" />
+              <QRCodeSVG value={getJoinUrl(peerId)} size={200} level="M" />
             </div>
           </div>
           <p className="text-gray-400 text-sm">Scanne pour rejoindre</p>
@@ -68,21 +77,28 @@ export function PvPWaiting({
         </div>
       )}
 
-      {/* ISO/IEC 25010 - Clear player count with max limit */}
       <div className="text-white mb-6">
         <p>
           Joueurs: {connectedPeers.length + 1}/{MAX_PLAYERS}
         </p>
-        <p className="text-sm text-gray-400">Status: {status}</p>
+        <p className="text-sm text-gray-400">{STATUS_LABELS[status]}</p>
       </div>
 
-      {isHost && connectedPeers.length > 0 && (
+      {isHost && (
         <Button
           onClick={onStartWordInput}
-          className="w-full bg-pink-500 hover:bg-pink-600 mb-4"
+          disabled={!canStart}
+          className="w-full bg-pink-700 hover:bg-pink-800 disabled:opacity-50 mb-4"
           size="lg"
         >
-          Choisir le mot
+          {canStart ? (
+            'Choisir le mot'
+          ) : (
+            <span>
+              Choisir le mot
+              <span className="block text-xs font-normal opacity-75">En attente de joueurs...</span>
+            </span>
+          )}
         </Button>
       )}
 
@@ -90,7 +106,6 @@ export function PvPWaiting({
         Quitter
       </Button>
 
-      {/* ISO/IEC 25065 - Confirmation before destructive action */}
       <Dialog open={showQuitConfirm} onOpenChange={setShowQuitConfirm}>
         <DialogContent className="bg-gray-800 border-gray-700">
           <DialogHeader>
