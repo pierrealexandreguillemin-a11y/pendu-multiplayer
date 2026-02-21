@@ -195,7 +195,9 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
       // Adjust turn index for guessers (excluding host)
       const updatedGuessers = updatedPlayers.filter((p) => !p.isHost);
       let newTurnIndex = currentTurnIndexRef.current;
-      if (updatedGuessers.length > 0) {
+      if (updatedGuessers.length === 0) {
+        newTurnIndex = 0;
+      } else {
         // Find position of disconnected player among guessers
         const guesserIndex = playersRef.current
           .filter((p) => !p.isHost)
@@ -227,7 +229,8 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     const handleMessage = (message: GameMessage) => {
       switch (message.type) {
         case 'start':
-          if (!peer.isHost) {
+          // Only apply if guest is not already playing (avoids resetting mid-game on re-broadcast)
+          if (!peer.isHost && phaseRef.current !== 'playing') {
             gameRef.current.startGame(message.payload.word, message.payload.category);
             setPhase('playing');
           }
@@ -297,6 +300,11 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
 
             // Broadcast with explicit data to avoid stale ref
             broadcastPlayersUpdate(updatedPlayers, currentTurnIndexRef.current);
+
+            // If game is already in progress, re-broadcast start so the new guest receives the word
+            if (phaseRef.current === 'playing' && gameRef.current.gameState) {
+              startBroadcastSentRef.current = false;
+            }
           }
           break;
 

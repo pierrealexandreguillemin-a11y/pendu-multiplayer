@@ -182,16 +182,16 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
 
       // Adjust turn index if needed
       let newTurnIndex = currentTurnIndexRef.current;
-      if (updatedPlayers.length > 0) {
-        if (playerIndex < currentTurnIndexRef.current) {
-          // Disconnected player was before current turn - shift index back
-          newTurnIndex = currentTurnIndexRef.current - 1;
-        } else if (playerIndex === currentTurnIndexRef.current) {
-          // Disconnected player had current turn - keep index but wrap if needed
-          newTurnIndex = currentTurnIndexRef.current % updatedPlayers.length;
-        }
-        // If disconnected player was after current turn, no change needed
+      if (updatedPlayers.length === 0) {
+        newTurnIndex = 0;
+      } else if (playerIndex < currentTurnIndexRef.current) {
+        // Disconnected player was before current turn - shift index back
+        newTurnIndex = currentTurnIndexRef.current - 1;
+      } else if (playerIndex === currentTurnIndexRef.current) {
+        // Disconnected player had current turn - keep index but wrap if needed
+        newTurnIndex = currentTurnIndexRef.current % updatedPlayers.length;
       }
+      // If disconnected player was after current turn, no change needed
       setCurrentTurnIndex(newTurnIndex);
 
       // Broadcast updated player list
@@ -210,7 +210,8 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     const handleMessage = (message: GameMessage) => {
       switch (message.type) {
         case 'start':
-          if (!peer.isHost) {
+          // Only apply if guest is not already playing (avoids resetting mid-game on re-broadcast)
+          if (!peer.isHost && phaseRef.current !== 'playing') {
             gameRef.current.startGame(message.payload.word, message.payload.category);
             setPhase('playing');
           }
@@ -279,6 +280,11 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
 
             // Broadcast with explicit data to avoid stale ref
             broadcastPlayersUpdate(updatedPlayers, currentTurnIndexRef.current);
+
+            // If game is already in progress, re-broadcast start so the new guest receives the word
+            if (phaseRef.current === 'playing' && gameRef.current.gameState) {
+              startBroadcastSentRef.current = false;
+            }
           }
           break;
 

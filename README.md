@@ -3,7 +3,7 @@
 > Jeu du pendu en famille avec modes Solo, Coop et PvP - Architecture ISO-compliant
 
 [![Node.js](https://img.shields.io/badge/Node.js-24%20LTS-green)](https://nodejs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Tests](https://img.shields.io/badge/Tests-106%20passing-brightgreen)]()
@@ -100,7 +100,7 @@ pendu/
 | Categorie | Technologie | Version |
 |-----------|-------------|---------|
 | Runtime | Node.js LTS | 24 (Krypton) |
-| Framework | Next.js + Turbopack | 16.1.1 |
+| Framework | Next.js + Turbopack | 16.1.6 |
 | UI Library | React | 19.2.3 |
 | Language | TypeScript (strict) | 5.x |
 | Styling | Tailwind CSS | 4.x |
@@ -121,7 +121,7 @@ Ce projet respecte les standards internationaux:
 |----------|---------|----------------|
 | **ISO/IEC 25010** | Qualite logicielle | TypeScript strict, 0 any, 0 warnings |
 | **ISO/IEC 25065** | UX/Utilisabilite | AZERTY, responsive, feedback audio |
-| **ISO/IEC 29119** | Tests | 106 tests, coverage domain 100% |
+| **ISO/IEC 29119** | Tests | 106 tests, coverage domain ~91% |
 | **ISO/IEC 5055** | Qualite code | ESLint strict, Prettier |
 | **ISO/IEC 12207** | Cycle de vie | Conventional commits, hooks |
 | **ISO/IEC 42010** | Architecture | DDD, Clean Architecture |
@@ -181,7 +181,7 @@ npm run e2e
 
 **Couverture actuelle:**
 - 106 tests unitaires
-- 100% sur domain layer (`game-engine.ts`, `difficulty-config.ts`)
+- ~91% sur `game-engine.ts`, 100% sur `difficulty-config.ts` et `words-difficulty.ts`
 - E2E: navigation, mode solo
 
 ## CI/CD Pipeline
@@ -227,7 +227,7 @@ Le projet est deploye automatiquement sur **Vercel**:
 - Protection mot de passe pour effacer le leaderboard
 - Validation Zod sur tous les messages P2P
 - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
-- npm audit: 0 vulnerabilities
+- npm audit: vulnerabilites corrigees via overrides et mises a jour regulieres
 - Dependabot: mises a jour auto
 
 ## Contribution
