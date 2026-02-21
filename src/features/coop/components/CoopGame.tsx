@@ -6,15 +6,8 @@ import { WordDisplay } from '@/components/game/WordDisplay';
 import { Keyboard } from '@/components/game/Keyboard';
 import { GameStatus } from '@/components/game/GameStatus';
 import { SoundToggle } from '@/components/ui/SoundToggle';
+import { CONNECTION_STATUS_LABELS } from '@/types/game';
 import type { GameState, Letter, DisplayChar, ConnectionStatus } from '@/types/game';
-
-/** Human-readable status */
-const STATUS_LABELS: Record<ConnectionStatus, string> = {
-  disconnected: 'Non connecté',
-  connecting: 'Connexion...',
-  connected: 'Connecté',
-  error: 'Erreur',
-};
 
 interface CoopGameProps {
   gameState: GameState;
@@ -66,7 +59,7 @@ export function CoopGame({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{STATUS_LABELS[status]}</span>
+          <span className="text-xs text-gray-400">{CONNECTION_STATUS_LABELS[status]}</span>
           <SoundToggle size="sm" />
         </div>
       </div>

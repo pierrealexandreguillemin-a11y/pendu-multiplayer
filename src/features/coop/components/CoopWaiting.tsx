@@ -12,16 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { CONNECTION_STATUS_LABELS } from '@/types/game';
 import type { ConnectionStatus } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
-
-/** Human-readable status labels - DRY: reusable map */
-const STATUS_LABELS: Record<ConnectionStatus, string> = {
-  disconnected: 'Non connecté',
-  connecting: 'Connexion...',
-  connected: 'Connecté',
-  error: 'Erreur de connexion',
-};
 
 interface CoopWaitingProps {
   peerId: string | null;
@@ -78,7 +71,7 @@ export function CoopWaiting({
         <p>
           Joueurs: {connectedPeers.length + 1}/{MAX_PLAYERS}
         </p>
-        <p className="text-sm text-gray-400">{STATUS_LABELS[status]}</p>
+        <p className="text-sm text-gray-400">{CONNECTION_STATUS_LABELS[status]}</p>
       </div>
 
       {isHost && (

@@ -208,6 +208,14 @@ export type GameMessage =
 /** Connection status for multiplayer */
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
+/** Human-readable French labels for connection status - DRY: single source of truth */
+export const CONNECTION_STATUS_LABELS: Record<ConnectionStatus, string> = {
+  disconnected: 'Non connecté',
+  connecting: 'Connexion...',
+  connected: 'Connecté',
+  error: 'Erreur de connexion',
+};
+
 // ============================================================================
 // LEADERBOARD (Score tracking per mode)
 // ============================================================================
