@@ -129,7 +129,11 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  *:focus-visible {
+    outline: 2px solid oklch(0.65 0.25 264);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
