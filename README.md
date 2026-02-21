@@ -6,7 +6,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.3-blue)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/Tests-106%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-163%20passing-brightgreen)]()
 [![ISO](https://img.shields.io/badge/ISO-25010%20%7C%2025065%20%7C%2042010-purple)]()
 
 **Production:** https://pendu-nu.vercel.app
@@ -125,7 +125,7 @@ Ce projet respecte les standards internationaux:
 |----------|---------|----------------|
 | **ISO/IEC 25010** | Qualite logicielle | TypeScript strict, 0 any, 0 warnings |
 | **ISO/IEC 25065** | UX/Utilisabilite | AZERTY, responsive, feedback audio |
-| **ISO/IEC 29119** | Tests | 106 tests, coverage domain ~91% |
+| **ISO/IEC 29119** | Tests | 163 tests (106 unit + 57 E2E), coverage domain ~91% |
 | **ISO/IEC 5055** | Qualite code | ESLint strict, Prettier |
 | **ISO/IEC 12207** | Cycle de vie | Conventional commits, hooks |
 | **ISO/IEC 42010** | Architecture | DDD, Clean Architecture |
@@ -179,14 +179,18 @@ npm run test
 # Tests avec couverture
 npm run test:coverage
 
-# Tests E2E
-npm run e2e
+# Tests E2E (contre production par defaut)
+npm run test:e2e
+
+# Tests E2E contre localhost
+E2E_BASE_URL=http://localhost:3000 npm run test:e2e
 ```
 
 **Couverture actuelle:**
-- 106 tests unitaires
+- 106 tests unitaires (Vitest)
+- 57 tests E2E (Playwright) contre production
 - ~91% sur `game-engine.ts`, 100% sur `difficulty-config.ts` et `words-difficulty.ts`
-- E2E: navigation, mode solo
+- E2E: home, solo complet, coop lobby, pvp lobby, difficulte, leaderboard, PWA
 
 ## CI/CD Pipeline
 
