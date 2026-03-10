@@ -206,7 +206,12 @@ export type GameMessage =
   | TurnChangeMessage;
 
 /** Connection status for multiplayer */
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'error'
+  | 'reconnecting';
 
 /** Human-readable French labels for connection status - DRY: single source of truth */
 export const CONNECTION_STATUS_LABELS: Record<ConnectionStatus, string> = {
@@ -214,6 +219,7 @@ export const CONNECTION_STATUS_LABELS: Record<ConnectionStatus, string> = {
   connecting: 'Connexion...',
   connected: 'Connecté',
   error: 'Erreur de connexion',
+  reconnecting: 'Reconnexion...',
 };
 
 // ============================================================================

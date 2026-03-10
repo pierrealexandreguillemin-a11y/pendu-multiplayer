@@ -10,11 +10,11 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { LeaderboardEntry, GameMode } from '@/types/game';
 import {
-  isUpstashConfigured,
-  addCloudScore,
-  syncLeaderboard,
-  getCloudLeaderboard,
-} from '@/lib/upstash-client';
+  isCloudConfigured,
+  submitCloudScore,
+  syncWithCloud,
+  fetchCloudLeaderboard,
+} from '@/lib/leaderboard-api';
 
 /**
  * Safe localStorage wrapper - handles errors gracefully
@@ -80,6 +80,8 @@ interface LeaderboardState {
   syncAllWithCloud: () => Promise<void>;
   /** Fetch cloud scores for a mode (read-only) */
   fetchCloudScores: (mode: GameMode) => Promise<LeaderboardEntry[]>;
+  /** Initialize cloud availability check (call once on mount) */
+  initCloud: () => Promise<void>;
 }
 
 /** Generate unique ID */
@@ -96,7 +98,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
         pvp: [],
       },
       cloudStatus: 'idle' as CloudSyncStatus,
-      isCloudEnabled: isUpstashConfigured(),
+      isCloudEnabled: false,
 
       addEntry: (entryData) => {
         const entry: LeaderboardEntry = {
@@ -126,8 +128,8 @@ export const useLeaderboardStore = create<LeaderboardState>()(
         });
 
         // Async cloud sync (fire and forget)
-        if (isUpstashConfigured()) {
-          addCloudScore(entry.mode, entry).catch((err) => {
+        if (get().isCloudEnabled) {
+          submitCloudScore(entry.mode, entry).catch((err) => {
             console.warn('[Leaderboard] Cloud sync failed:', err);
           });
         }
@@ -157,13 +159,13 @@ export const useLeaderboardStore = create<LeaderboardState>()(
       },
 
       syncWithCloud: async (mode) => {
-        if (!isUpstashConfigured()) return;
+        if (!get().isCloudEnabled) return;
 
         set({ cloudStatus: 'syncing' });
 
         try {
           const localEntries = get().entries[mode];
-          const mergedEntries = await syncLeaderboard(mode, localEntries);
+          const mergedEntries = await syncWithCloud(mode, localEntries);
 
           set((state) => ({
             entries: {
@@ -179,7 +181,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
       },
 
       syncAllWithCloud: async () => {
-        if (!isUpstashConfigured()) return;
+        if (!get().isCloudEnabled) return;
 
         set({ cloudStatus: 'syncing' });
 
@@ -189,7 +191,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
           const results = await Promise.all(
             modes.map(async (mode) => {
-              const merged = await syncLeaderboard(mode, state.entries[mode]);
+              const merged = await syncWithCloud(mode, state.entries[mode]);
               return { mode, entries: merged };
             })
           );
@@ -210,14 +212,19 @@ export const useLeaderboardStore = create<LeaderboardState>()(
       },
 
       fetchCloudScores: async (mode) => {
-        if (!isUpstashConfigured()) return [];
+        if (!get().isCloudEnabled) return [];
 
         try {
-          return await getCloudLeaderboard(mode, true);
+          return await fetchCloudLeaderboard(mode);
         } catch (error) {
           console.error('[Leaderboard] Cloud fetch error:', error);
           return [];
         }
+      },
+
+      initCloud: async () => {
+        const configured = await isCloudConfigured();
+        set({ isCloudEnabled: configured });
       },
     }),
     {

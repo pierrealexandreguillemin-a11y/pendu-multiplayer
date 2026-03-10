@@ -5,9 +5,11 @@
  * ISO/IEC 25010 - Reliability: Graceful fallback when offline
  * ISO/IEC 42010 - Architecture: Infrastructure layer for persistence
  *
- * Environment variables:
- * - NEXT_PUBLIC_UPSTASH_REDIS_REST_URL
- * - NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN
+ * Server-side only. Accessed via API routes, never imported by client code.
+ *
+ * Environment variables (server-side, not prefixed with NEXT_PUBLIC):
+ * - UPSTASH_REDIS_REST_URL
+ * - UPSTASH_REDIS_REST_TOKEN
  */
 
 import { Redis } from '@upstash/redis';
@@ -41,8 +43,8 @@ const cachedData: Record<GameMode, LeaderboardEntry[]> = {
  * Returns null if environment variables are not configured
  */
 function getRedisClient(): Redis | null {
-  const url = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL;
-  const token = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
     console.warn('[Upstash] Missing environment variables. Cloud sync disabled.');
@@ -53,13 +55,10 @@ function getRedisClient(): Redis | null {
 }
 
 /**
- * Check if Upstash is configured
+ * Check if Upstash is configured (server-side only)
  */
 export function isUpstashConfigured(): boolean {
-  return (
-    !!process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL &&
-    !!process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN
-  );
+  return !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
 }
 
 /**
