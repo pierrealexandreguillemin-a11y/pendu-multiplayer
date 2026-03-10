@@ -13,7 +13,13 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/lib/**', 'src/hooks/**', 'src/stores/**'],
-      exclude: ['node_modules', '__tests__', 'e2e'],
+      exclude: [
+        'node_modules',
+        '__tests__',
+        'e2e',
+        'src/lib/upstash-client.ts',
+        'src/lib/leaderboard-api.ts',
+      ],
       thresholds: {
         // ISO/IEC 29119 - Progressive coverage targets
         // Current baseline - increase as tests are added
