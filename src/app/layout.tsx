@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { ConsoleBanner } from '@/components/effects';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -50,6 +51,7 @@ export default function RootLayout({
         >
           Aller au contenu principal
         </a>
+        <ConsoleBanner />
         {children}
       </body>
     </html>
