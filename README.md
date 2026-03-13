@@ -125,7 +125,7 @@ Ce projet respecte les standards internationaux:
 |----------|---------|----------------|
 | **ISO/IEC 25010** | Qualite logicielle | TypeScript strict, 0 any, 0 warnings |
 | **ISO/IEC 25065** | UX/Utilisabilite | AZERTY, responsive, feedback audio |
-| **ISO/IEC 29119** | Tests | 163 tests (106 unit + 57 E2E), coverage domain ~91% |
+| **ISO/IEC 29119** | Tests | 167 tests (108 unit + 59 E2E), coverage domain ~91% |
 | **ISO/IEC 5055** | Qualite code | ESLint strict, Prettier |
 | **ISO/IEC 12207** | Cycle de vie | Conventional commits, hooks |
 | **ISO/IEC 42010** | Architecture | DDD, Clean Architecture |
@@ -187,10 +187,10 @@ E2E_BASE_URL=http://localhost:3000 npm run test:e2e
 ```
 
 **Couverture actuelle:**
-- 106 tests unitaires (Vitest)
-- 57 tests E2E (Playwright) contre production
+- 108 tests unitaires (Vitest)
+- 59 tests E2E (Playwright) contre production
 - ~91% sur `game-engine.ts`, 100% sur `difficulty-config.ts` et `words-difficulty.ts`
-- E2E: home, solo complet, coop lobby, pvp lobby, difficulte, leaderboard, PWA
+- E2E: home, solo complet, coop lobby, pvp lobby, difficulte, leaderboard, PWA, console banner
 
 ## CI/CD Pipeline
 
