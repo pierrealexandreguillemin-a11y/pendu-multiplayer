@@ -113,7 +113,7 @@ pendu/
 │   ├── components/                   # PRESENTATION - Composants UI
 │   │   ├── game/                    # BalloonDisplay, Keyboard, Leaderboard
 │   │   ├── ui/                      # shadcn/ui (Button, Dialog, Input)
-│   │   └── effects/                 # Glassmorphism, animations
+│   │   └── effects/                 # Glassmorphism, animations, console banner
 │   │
 │   ├── features/                     # APPLICATION - Feature modules
 │   │   ├── solo/                    # hooks + components solo

@@ -56,7 +56,7 @@ pendu/
 │   ├── components/          # PRESENTATION - Composants UI
 │   │   ├── game/            # BalloonDisplay, Keyboard, Leaderboard...
 │   │   ├── ui/              # Composants shadcn/ui
-│   │   └── effects/         # Glassmorphism, animations
+│   │   └── effects/         # Glassmorphism, animations, console banner
 │   ├── features/            # APPLICATION - Feature modules
 │   │   ├── solo/            # hooks + components solo
 │   │   ├── coop/            # hooks + components coop
