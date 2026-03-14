@@ -111,35 +111,138 @@ git commit -m "feat: create words.csv with 120 migrated words (8→10 categories
 
 ---
 
-## Chunk 2: Rewire generation scripts to read CSV
+## Chunk 2: DRY shared modules + rewire generation scripts
 
-### Task 3: Update `generate-word-frequencies.ts` to read CSV instead of parsing `words.ts`
+### Task 3: Create shared `VALID_CATEGORIES` constant
+
+**Files:**
+- Create: `src/lib/categories.ts`
+
+Single source of truth for the 15 category names. Used by generation scripts (validation) and tests.
+
+- [ ] **Step 1: Create `src/lib/categories.ts`**
+
+```typescript
+/**
+ * Valid word categories — single source of truth
+ */
+export const VALID_CATEGORIES = [
+  'Animal', 'Nourriture', 'Métier', 'Sport', 'Géographie',
+  'Nature', 'Science', 'Musique', 'Véhicule', 'Vêtement',
+  'Corps humain', 'Art', 'Histoire', 'Maison', 'Technologie',
+] as const;
+
+export type WordCategory = (typeof VALID_CATEGORIES)[number];
+```
+
+- [ ] **Step 2: Run quality gate**
+
+```bash
+npm run lint && npm run typecheck && npx vitest run
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/lib/categories.ts
+git commit -m "refactor: extract VALID_CATEGORIES to shared module (DRY)"
+```
+
+### Task 4: Create shared CSV parser `scripts/parse-words-csv.ts`
+
+**Files:**
+- Create: `scripts/parse-words-csv.ts`
+
+DRY: both generation scripts need to parse `data/words.csv`. Extract to shared module with validation.
+
+- [ ] **Step 1: Create `scripts/parse-words-csv.ts`**
+
+```typescript
+/**
+ * Shared CSV parser for data/words.csv
+ * Used by generate-word-frequencies.ts and generate-word-classifications.ts
+ */
+
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+export interface CsvWordEntry {
+  word: string;
+  category: string;
+}
+
+/**
+ * Parse data/words.csv with validation.
+ * Exits process on malformed data, unknown categories, or duplicates.
+ */
+export function parseWordsCsv(
+  projectRoot: string,
+  validCategories?: readonly string[],
+): CsvWordEntry[] {
+  const csvPath = path.join(projectRoot, 'data/words.csv');
+  const content = fs.readFileSync(csvPath, 'utf-8');
+  const lines = content.trim().split('\n').slice(1); // skip header
+
+  const entries: CsvWordEntry[] = [];
+  const seenWords = new Set<string>();
+
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const commaIdx = line.indexOf(',');
+    if (commaIdx === -1) {
+      console.error(`Malformed line in words.csv: ${line}`);
+      process.exit(1);
+    }
+    const word = line.slice(0, commaIdx).trim();
+    const category = line.slice(commaIdx + 1).trim();
+
+    if (validCategories && !validCategories.includes(category)) {
+      console.error(`Unknown category "${category}" for word "${word}"`);
+      process.exit(1);
+    }
+
+    const key = word.toUpperCase();
+    if (seenWords.has(key)) {
+      console.error(`Duplicate word: "${word}"`);
+      process.exit(1);
+    }
+    seenWords.add(key);
+    entries.push({ word, category });
+  }
+
+  return entries;
+}
+```
+
+- [ ] **Step 2: Run quality gate**
+
+```bash
+npm run lint && npm run typecheck && npx vitest run
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add scripts/parse-words-csv.ts
+git commit -m "refactor: extract shared CSV parser for generation scripts (DRY)"
+```
+
+### Task 5: Update `generate-word-frequencies.ts` to use shared parser
 
 **Files:**
 - Modify: `scripts/generate-word-frequencies.ts`
 
-The script currently reads `src/lib/words.ts` via regex (line 47-53). Replace with CSV parsing.
+The script currently reads `src/lib/words.ts` via regex (line 47-53). Replace with shared CSV parser.
 
 - [ ] **Step 1: Replace word extraction logic**
 
 Replace the `wordsContent` / `wordRegex` block (lines 47-53) with:
 
 ```typescript
-// 2. Read game words from CSV
-const wordsCsvPath = path.join(PROJECT_ROOT, 'data/words.csv');
-const wordsCsvContent = fs.readFileSync(wordsCsvPath, 'utf-8');
-const wordLines = wordsCsvContent.trim().split('\n').slice(1); // skip header
-const gameWords: string[] = [];
+import { parseWordsCsv } from './parse-words-csv';
 
-for (const line of wordLines) {
-  if (!line.trim()) continue;
-  const commaIdx = line.indexOf(',');
-  if (commaIdx === -1) {
-    console.error(`Malformed line in words.csv: ${line}`);
-    process.exit(1);
-  }
-  gameWords.push(line.slice(0, commaIdx).trim());
-}
+// 2. Read game words from CSV
+const gameWords = parseWordsCsv(PROJECT_ROOT).map((e) => e.word);
 ```
 
 - [ ] **Step 2: Run generation and quality gate**
@@ -155,56 +258,27 @@ Output should show same 120 words with same frequency scores.
 
 ```bash
 git add scripts/generate-word-frequencies.ts
-git commit -m "refactor: generate-word-frequencies reads CSV instead of words.ts"
+git commit -m "refactor: generate-word-frequencies uses shared CSV parser"
 ```
 
-### Task 4: Update `generate-word-classifications.ts` to read CSV
+### Task 6: Update `generate-word-classifications.ts` to use shared parser
 
 **Files:**
 - Modify: `scripts/generate-word-classifications.ts`
 
-Currently imports `WORDS` from `../src/lib/words` (line 25). Replace with CSV parsing.
+Currently imports `WORDS` from `../src/lib/words` (line 25). Replace with shared CSV parser.
 
-- [ ] **Step 1: Add CSV parsing, remove words.ts import**
+- [ ] **Step 1: Replace WORDS import with shared parser**
+
+Add import at top:
+```typescript
+import { parseWordsCsv } from './parse-words-csv';
+import { VALID_CATEGORIES } from '../src/lib/categories';
+```
 
 Replace the dynamic import of WORDS (line 25-26) with:
-
 ```typescript
-// Read words from CSV
-const wordsCsvPath = path.join(PROJECT_ROOT, 'data/words.csv');
-const wordsCsvContent = fs.readFileSync(wordsCsvPath, 'utf-8');
-const csvLines = wordsCsvContent.trim().split('\n').slice(1);
-
-const VALID_CATEGORIES = [
-  'Animal', 'Nourriture', 'Métier', 'Sport', 'Géographie',
-  'Nature', 'Science', 'Musique', 'Véhicule', 'Vêtement',
-  'Corps humain', 'Art', 'Histoire', 'Maison', 'Technologie',
-];
-
-const wordEntries: { word: string; category: string }[] = [];
-const seenWords = new Set<string>();
-
-for (const line of csvLines) {
-  if (!line.trim()) continue;
-  const commaIdx = line.indexOf(',');
-  if (commaIdx === -1) {
-    console.error(`Malformed line: ${line}`);
-    process.exit(1);
-  }
-  const word = line.slice(0, commaIdx).trim();
-  const category = line.slice(commaIdx + 1).trim();
-  if (!VALID_CATEGORIES.includes(category)) {
-    console.error(`Unknown category "${category}" for word "${word}"`);
-    process.exit(1);
-  }
-  const key = word.toUpperCase();
-  if (seenWords.has(key)) {
-    console.error(`Duplicate word: "${word}"`);
-    process.exit(1);
-  }
-  seenWords.add(key);
-  wordEntries.push({ word, category });
-}
+const wordEntries = parseWordsCsv(PROJECT_ROOT, VALID_CATEGORIES);
 ```
 
 Retain the `computeDifficultyScore` and `normalizeWord` dynamic imports unchanged. Only replace the `WORDS` import line. Then update the `classifications` mapping: change `WORDS.map((entry: ...)` to `wordEntries.map((entry: ...)`.
@@ -220,10 +294,10 @@ npm run lint && npm run typecheck && npx vitest run
 
 ```bash
 git add scripts/generate-word-classifications.ts
-git commit -m "refactor: generate-word-classifications reads CSV with validation"
+git commit -m "refactor: generate-word-classifications uses shared CSV parser"
 ```
 
-### Task 5: Update `source-hash.ts` — replace `words.ts` with `words.csv`
+### Task 7: Update `source-hash.ts` — replace `words.ts` with `words.csv`
 
 **Files:**
 - Modify: `scripts/source-hash.ts`
@@ -256,7 +330,7 @@ git commit -m "refactor: source-hash tracks words.csv instead of words.ts"
 
 ## Chunk 3: Delete `words.ts`, rewire consumers
 
-### Task 6: Rewire `session-memory.ts` to use `CLASSIFIED_WORDS`
+### Task 8: Rewire `session-memory.ts` to use `CLASSIFIED_WORDS`
 
 **Files:**
 - Modify: `src/lib/session-memory.ts`
@@ -297,7 +371,7 @@ git add src/lib/session-memory.ts __tests__/lib/session-memory.test.ts
 git commit -m "refactor: session-memory uses CLASSIFIED_WORDS instead of WORDS"
 ```
 
-### Task 7: Rewire `useGameLogic.ts` to use `words-difficulty`
+### Task 9: Rewire `useGameLogic.ts` to use `words-difficulty`
 
 **Files:**
 - Modify: `src/hooks/useGameLogic.ts`
@@ -351,7 +425,7 @@ git add src/hooks/useGameLogic.ts
 git commit -m "refactor: useGameLogic uses getRandomWordByDifficulty"
 ```
 
-### Task 8: Delete `src/lib/words.ts`
+### Task 10: Delete `src/lib/words.ts`
 
 **Files:**
 - Delete: `src/lib/words.ts`
@@ -399,7 +473,7 @@ git commit -m "refactor: delete words.ts — CSV is now the single source of tru
 
 ## Chunk 4: Populate 1500 words
 
-### Task 9: Populate `data/words.csv` with ~1500 words across 15 categories
+### Task 11: Populate `data/words.csv` with ~1500 words across 15 categories
 
 **Files:**
 - Modify: `data/words.csv`
@@ -472,7 +546,7 @@ git commit -m "feat: expand word corpus to ~1500 words across 15 categories"
 
 ## Chunk 5: Recalibrate thresholds + update tests
 
-### Task 10: Recalibrate difficulty thresholds
+### Task 12: Recalibrate difficulty thresholds
 
 **Files:**
 - Modify: `src/lib/difficulty-config.ts` (if needed)
@@ -504,7 +578,7 @@ git add src/lib/difficulty-config.ts src/lib/word-classifications.ts
 git commit -m "fix: recalibrate difficulty thresholds for 1500-word corpus"
 ```
 
-### Task 11: Update test assertions
+### Task 13: Update test assertions
 
 **Files:**
 - Modify: `__tests__/lib/words-difficulty.test.ts`
@@ -538,7 +612,7 @@ git add __tests__/
 git commit -m "test: update assertions for 1500-word corpus"
 ```
 
-### Task 12: Add new validation tests
+### Task 14: Add new validation tests
 
 **Files:**
 - Create: `__tests__/lib/words-csv.test.ts`
@@ -548,12 +622,7 @@ git commit -m "test: update assertions for 1500-word corpus"
 ```typescript
 import { WORD_CLASSIFICATIONS } from '@/lib/word-classifications';
 import { normalizeWord } from '@/lib/normalize';
-
-const VALID_CATEGORIES = [
-  'Animal', 'Nourriture', 'Métier', 'Sport', 'Géographie',
-  'Nature', 'Science', 'Musique', 'Véhicule', 'Vêtement',
-  'Corps humain', 'Art', 'Histoire', 'Maison', 'Technologie',
-];
+import { VALID_CATEGORIES } from '@/lib/categories';
 
 describe('Word corpus validation', () => {
   it('should have at least 80 words per category', () => {
@@ -612,7 +681,7 @@ git commit -m "test: add word corpus validation tests (categories, uniqueness, l
 
 ## Chunk 6: Update Lexique frequency data
 
-### Task 13: Update `generate-word-frequencies.ts` scoring for larger corpus
+### Task 15: Update `generate-word-frequencies.ts` scoring for larger corpus
 
 **Files:**
 - Modify: `scripts/generate-word-frequencies.ts`
@@ -658,14 +727,27 @@ git commit -m "fix: dynamic refMax in frequency scoring for larger corpus"
 ## Task Dependency Graph
 
 ```
-Task 1 (WordEntry type) ──→ Task 2 (CSV) ──→ Task 3 (gen-freq) ──→ Task 5 (source-hash)
-                                             ↘ Task 4 (gen-class) ─↗        │
-                                                                             ↓
-Task 6 (session-memory) ──→ Task 7 (useGameLogic) ──→ Task 8 (words-difficulty import + delete words.ts)
-                                                             │
-                                                             ↓
-Task 9 (populate 1500) ──→ Task 13 (dynamic refMax) ──→ Task 10 (thresholds)
-                                                             │
-                                                             ↓
-                           Task 11 (update tests) ──→ Task 12 (new tests)
+Task 1 (WordEntry type) ──→ Task 2 (CSV) ──→ Task 3 (categories) ──→ Task 4 (CSV parser)
+                                                                          │
+                                                    ┌─────────────────────┤
+                                                    ↓                     ↓
+                                              Task 5 (gen-freq)    Task 6 (gen-class)
+                                                    └──────┬──────────────┘
+                                                           ↓
+                                                    Task 7 (source-hash)
+                                                           ↓
+Task 8 (session-memory) ──→ Task 9 (useGameLogic) ──→ Task 10 (delete words.ts)
+                                                           │
+                                                           ↓
+Task 11 (populate 1500) ──→ Task 15 (dynamic refMax) ──→ Task 12 (thresholds)
+                                                           │
+                                                           ↓
+                            Task 13 (update tests) ──→ Task 14 (new tests)
 ```
+
+### DRY Architecture Notes
+
+- **`src/lib/categories.ts`** — single source of truth for `VALID_CATEGORIES` (used by: generation scripts, tests, potentially UI)
+- **`scripts/parse-words-csv.ts`** — shared CSV parser with validation (used by: `generate-word-frequencies.ts`, `generate-word-classifications.ts`)
+- **`src/types/word.ts`** — `WordEntry` interface (used by: `words-difficulty.ts`, `session-memory.ts`, `useSessionMemory.ts`)
+- **`session-memory.ts`** keeps its role: it manages **stateful word tracking** (used/remaining), distinct from `words-difficulty.ts` which provides **stateless filtering** by difficulty. No duplication — different responsibilities (SRP).
