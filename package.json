@@ -21,7 +21,9 @@
     "test:e2e:ui": "playwright test --ui",
     "validate": "npm run typecheck && npm run lint && npm run test:run",
     "validate:full": "npm run validate && npm run build && npm run test:e2e",
-    "prepare": "husky"
+    "prepare": "husky",
+    "generate:classifications": "tsx scripts/generate-word-classifications.ts",
+    "check:classifications": "tsx scripts/check-word-classifications.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
