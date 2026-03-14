@@ -7,6 +7,7 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { calculateScore } from '@/lib/game-engine';
 import { calculateDifficultyScore } from '@/lib/difficulty-config';
+import { useMultiplayerCallbacks } from '@/features/multiplayer';
 
 interface PvPSessionActionsOptions {
   game: ReturnType<typeof useGameLogic>;
@@ -41,6 +42,19 @@ export function usePvPSessionActions(opts: PvPSessionActionsOptions) {
     hasRecordedRef,
   } = opts;
 
+  // Delegate shared endSession logic to useMultiplayerCallbacks
+  const { endSession } = useMultiplayerCallbacks({
+    playerName: '',
+    joinId: '',
+    peer,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase: setPhase as (phase: string) => void,
+    setSessionScore,
+    setWordsWon,
+    startBroadcastSentRef,
+  });
+
   const continueSession = useCallback(() => {
     const currentWord = game.gameState?.word;
     const currentDifficulty = game.gameState?.difficulty ?? 'normal';
@@ -64,24 +78,6 @@ export function usePvPSessionActions(opts: PvPSessionActionsOptions) {
     setCustomWord,
     setCustomCategory,
     setPhase,
-  ]);
-
-  const endSession = useCallback(() => {
-    peer.disconnect();
-    setPhase('lobby');
-    setPlayers([]);
-    setCurrentTurnIndex(0);
-    setSessionScore(0);
-    setWordsWon(0);
-    startBroadcastSentRef.current = false;
-  }, [
-    peer,
-    setPlayers,
-    setCurrentTurnIndex,
-    setPhase,
-    setSessionScore,
-    setWordsWon,
-    startBroadcastSentRef,
   ]);
 
   return { continueSession, endSession };

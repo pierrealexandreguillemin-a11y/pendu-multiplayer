@@ -12,8 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { GameMode } from '@/types/game';
 import { getCloudLeaderboard, addCloudScore } from '@/lib/upstash-client';
-
-const VALID_MODES: GameMode[] = ['solo', 'coop', 'pvp'];
+import { parseJsonBody, validateMode } from './shared';
 
 /**
  * GET /api/leaderboard?mode=solo
@@ -21,14 +20,9 @@ const VALID_MODES: GameMode[] = ['solo', 'coop', 'pvp'];
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
-  const mode = searchParams.get('mode') as GameMode | null;
-
-  if (!mode || !VALID_MODES.includes(mode)) {
-    return NextResponse.json(
-      { error: 'Invalid or missing mode. Expected: solo | coop | pvp' },
-      { status: 400 }
-    );
-  }
+  const modeParam = searchParams.get('mode');
+  const { mode, error: modeError } = validateMode(modeParam);
+  if (modeError) return modeError;
 
   const entries = await getCloudLeaderboard(mode);
   return NextResponse.json(entries);
@@ -39,26 +33,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Adds a new score entry to the cloud leaderboard
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  let body: unknown;
+  const { body, error: bodyError } = await parseJsonBody(request);
+  if (bodyError) return bodyError;
 
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  if (!body || typeof body !== 'object') {
-    return NextResponse.json({ error: 'Body must be an object' }, { status: 400 });
-  }
-
-  const { mode, entry } = body as Record<string, unknown>;
-
-  if (!mode || typeof mode !== 'string' || !VALID_MODES.includes(mode as GameMode)) {
-    return NextResponse.json(
-      { error: 'Invalid or missing mode. Expected: solo | coop | pvp' },
-      { status: 400 }
-    );
-  }
+  const { mode: modeRaw, entry } = body;
+  const { mode, error: modeError } = validateMode(modeRaw);
+  if (modeError) return modeError;
 
   if (!entry || typeof entry !== 'object') {
     return NextResponse.json({ error: 'Missing or invalid entry' }, { status: 400 });
