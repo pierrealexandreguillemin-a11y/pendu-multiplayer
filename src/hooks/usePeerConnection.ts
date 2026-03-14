@@ -78,9 +78,7 @@ function makeSetupConnection(refs: PeerRefs, setters: PeerSetters) {
         if (refs.hostIdRef.current !== null) {
           setters.setStatus('reconnecting');
           setters.setReconnectTrigger((n) => n + 1);
-        } else {
-          setters.setStatus('disconnected');
-        }
+        } else setters.setStatus('disconnected');
       }
     });
     conn.on('error', (err) => {
@@ -150,6 +148,84 @@ function useReconnectEffect({
   }, [reconnectTrigger]);
 }
 
+function makeCreateRoom(
+  refs: PeerRefs,
+  setters: PeerSetters,
+  setIsHost: (v: boolean) => void,
+  setupConnection: (conn: DataConnection) => void
+) {
+  return (): Promise<string> =>
+    new Promise((resolve, reject) => {
+      setters.setStatus('connecting');
+      setIsHost(true);
+      const timeoutId = setTimeout(() => {
+        refs.peerRef.current?.destroy();
+        setters.setError('Room creation timeout - PeerJS server may be unreachable');
+        setters.setStatus('error');
+        reject(new Error('Room creation timeout'));
+      }, CREATE_TIMEOUT_MS);
+      const peer = new Peer();
+      refs.peerRef.current = peer;
+      peer.on('open', (id) => {
+        clearTimeout(timeoutId);
+        setters.setPeerId(id);
+        setters.setStatus('connected');
+        resolve(id);
+      });
+      peer.on('connection', (conn) => {
+        setupConnection(conn);
+      });
+      peer.on('error', (err) => {
+        clearTimeout(timeoutId);
+        setters.setError(err.message);
+        setters.setStatus('error');
+        reject(err);
+      });
+    });
+}
+
+function makeJoinRoom(
+  refs: PeerRefs,
+  setters: PeerSetters,
+  setIsHost: (v: boolean) => void,
+  setupConnection: (conn: DataConnection) => void
+) {
+  return (hostId: string): Promise<string> =>
+    new Promise((resolve, reject) => {
+      setters.setStatus('connecting');
+      setIsHost(false);
+      refs.hostIdRef.current = hostId;
+      refs.reconnectAttemptsRef.current = 0;
+      const timeoutId = setTimeout(() => {
+        refs.peerRef.current?.destroy();
+        setters.setError('Connection timeout - host may not exist');
+        setters.setStatus('error');
+        reject(new Error('Connection timeout'));
+      }, JOIN_TIMEOUT_MS);
+      const peer = new Peer();
+      refs.peerRef.current = peer;
+      peer.on('open', (id) => {
+        setters.setPeerId(id);
+        const conn = peer.connect(hostId, { reliable: true });
+        setupConnection(conn);
+        conn.on('open', () => {
+          clearTimeout(timeoutId);
+          resolve(id);
+        });
+        conn.on('error', (err) => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
+      });
+      peer.on('error', (err) => {
+        clearTimeout(timeoutId);
+        setters.setError(err.message);
+        setters.setStatus('error');
+        reject(err);
+      });
+    });
+}
+
 /**
  * ISO/IEC 25010 - Reliability: Improved peer connection hook with message buffering
  * Messages received before handler registration are buffered and processed when handler is set
@@ -191,77 +267,16 @@ export function usePeerConnection(): UsePeerConnectionReturn {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const setupConnection = useCallback(makeSetupConnection(refs, setters), []);
-
   useReconnectEffect({ reconnectTrigger, refs, setters, setupConnection });
 
-  const createRoom = useCallback((): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      setStatus('connecting');
-      setIsHost(true);
-      const timeoutId = setTimeout(() => {
-        peerRef.current?.destroy();
-        setError('Room creation timeout - PeerJS server may be unreachable');
-        setStatus('error');
-        reject(new Error('Room creation timeout'));
-      }, CREATE_TIMEOUT_MS);
-      const peer = new Peer();
-      peerRef.current = peer;
-      peer.on('open', (id) => {
-        clearTimeout(timeoutId);
-        setPeerId(id);
-        setStatus('connected');
-        resolve(id);
-      });
-      peer.on('connection', (conn) => {
-        setupConnection(conn);
-      });
-      peer.on('error', (err) => {
-        clearTimeout(timeoutId);
-        setError(err.message);
-        setStatus('error');
-        reject(err);
-      });
-    });
-  }, [setupConnection]);
-
-  const joinRoom = useCallback(
-    (hostId: string): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        setStatus('connecting');
-        setIsHost(false);
-        hostIdRef.current = hostId;
-        reconnectAttemptsRef.current = 0;
-        const timeoutId = setTimeout(() => {
-          peerRef.current?.destroy();
-          setError('Connection timeout - host may not exist');
-          setStatus('error');
-          reject(new Error('Connection timeout'));
-        }, JOIN_TIMEOUT_MS);
-        const peer = new Peer();
-        peerRef.current = peer;
-        peer.on('open', (id) => {
-          setPeerId(id);
-          const conn = peer.connect(hostId, { reliable: true });
-          setupConnection(conn);
-          conn.on('open', () => {
-            clearTimeout(timeoutId);
-            resolve(id);
-          });
-          conn.on('error', (err) => {
-            clearTimeout(timeoutId);
-            reject(err);
-          });
-        });
-        peer.on('error', (err) => {
-          clearTimeout(timeoutId);
-          setError(err.message);
-          setStatus('error');
-          reject(err);
-        });
-      });
-    },
-    [setupConnection]
-  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const createRoom = useCallback(makeCreateRoom(refs, setters, setIsHost, setupConnection), [
+    setupConnection,
+  ]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const joinRoom = useCallback(makeJoinRoom(refs, setters, setIsHost, setupConnection), [
+    setupConnection,
+  ]);
 
   const sendMessage = useCallback((message: GameMessage) => {
     Array.from(connectionsRef.current.values()).forEach((conn) => {
@@ -304,8 +319,8 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     messageHandlerRef.current = null;
     messageBufferRef.current = [];
   }, []);
-  const onPeerDisconnect = useCallback((handler: DisconnectHandler) => {
-    disconnectHandlerRef.current = handler;
+  const onPeerDisconnect = useCallback((h: DisconnectHandler) => {
+    disconnectHandlerRef.current = h;
   }, []);
   const offPeerDisconnect = useCallback(() => {
     disconnectHandlerRef.current = null;

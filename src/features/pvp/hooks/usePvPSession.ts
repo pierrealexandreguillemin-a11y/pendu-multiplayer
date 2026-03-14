@@ -12,12 +12,13 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 import { useLeaderboardStore } from '@/stores/leaderboard';
 import { calculateScore } from '@/lib/game-engine';
 import { calculateDifficultyScore } from '@/lib/difficulty-config';
-import type { Letter, GameMessage } from '@/types/game';
+import type { Letter, GameMessage, LeaderboardEntry } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
+
+type AddEntryFn = (entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>) => void;
 
 export type PvPPhase = 'lobby' | 'waiting' | 'word-input' | 'playing';
 
-/** Simple player info for room management */
 interface PvPPlayer {
   id: string;
   name: string;
@@ -103,9 +104,8 @@ function handlePvPPlayerJoinMessage(
   const updatedPlayers = [...refs.playersRef.current, newPlayer];
   actions.setPlayers(updatedPlayers);
   actions.broadcastPlayersUpdate(updatedPlayers, refs.currentTurnIndexRef.current);
-  if (refs.phaseRef.current === 'playing' && refs.gameRef.current.gameState) {
+  if (refs.phaseRef.current === 'playing' && refs.gameRef.current.gameState)
     refs.startBroadcastSentRef.current = false;
-  }
 }
 
 function buildPvPMessageHandler(refs: PvPRefs, actions: PvPActions) {
@@ -202,9 +202,8 @@ function usePvPRoom(peer: ReturnType<typeof usePeerConnection>): PvPRoomState {
       setPlayers(updatedPlayers);
       const updatedGuessers = updatedPlayers.filter((p) => !p.isHost);
       let newTurnIndex = currentTurnIndexRef.current;
-      if (updatedGuessers.length === 0) {
-        newTurnIndex = 0;
-      } else {
+      if (updatedGuessers.length === 0) newTurnIndex = 0;
+      else {
         const guesserIndex = playersRef.current
           .filter((p) => !p.isHost)
           .findIndex((p) => p.id === disconnectedPeerId);
@@ -234,52 +233,42 @@ function usePvPRoom(peer: ReturnType<typeof usePeerConnection>): PvPRoomState {
   };
 }
 
-export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionOptions) {
-  const [phase, setPhase] = useState<PvPPhase>('lobby');
-  const [joinId, setJoinId] = useState(initialJoinId);
-  const [customWord, setCustomWord] = useState('');
-  const [customCategory, setCustomCategory] = useState('');
+interface PvPEffectsOptions {
+  peer: ReturnType<typeof usePeerConnection>;
+  game: ReturnType<typeof useGameLogic>;
+  phase: PvPPhase;
+  setPhase: (phase: PvPPhase) => void;
+  playerName: string;
+  sessionScore: number;
+  wordsWon: number;
+  hasRecordedRef: React.MutableRefObject<boolean>;
+  startBroadcastSentRef: React.MutableRefObject<boolean>;
+  refs: PvPRefs;
+  setPlayers: React.Dispatch<React.SetStateAction<PvPPlayer[]>>;
+  setCurrentTurnIndex: React.Dispatch<React.SetStateAction<number>>;
+  advanceTurn: () => void;
+  broadcastPlayersUpdate: (playerList?: PvPPlayer[], turnIndex?: number) => void;
+  addEntry: AddEntryFn;
+}
 
-  const peer = usePeerConnection();
-  const game = useGameLogic();
-  const { addEntry } = useLeaderboardStore();
-
-  const room = usePvPRoom(peer);
+function usePvPEffects(opts: PvPEffectsOptions) {
   const {
-    players,
-    currentTurnIndex,
-    broadcastPlayersUpdate,
-    advanceTurn,
+    peer,
+    game,
+    phase,
+    setPhase,
+    playerName,
+    sessionScore,
+    wordsWon,
+    hasRecordedRef,
+    startBroadcastSentRef,
+    refs,
     setPlayers,
     setCurrentTurnIndex,
-  } = room;
-
-  const [sessionScore, setSessionScore] = useState(0);
-  const [wordsWon, setWordsWon] = useState(0);
-  const hasRecordedRef = useRef(false);
-  const startBroadcastSentRef = useRef(false);
-
-  const gameRef = useRef(game);
-  const phaseRef = useRef(phase);
-  const playersRef = useRef(players);
-  const currentTurnIndexRef = useRef(currentTurnIndex);
-  useEffect(() => {
-    gameRef.current = game;
-    phaseRef.current = phase;
-  }, [game, phase]);
-  useEffect(() => {
-    playersRef.current = players;
-    currentTurnIndexRef.current = currentTurnIndex;
-  }, [players, currentTurnIndex]);
-
-  const difficulty = game.gameState?.difficulty ?? 'normal';
-  const wordScore = game.gameState
-    ? calculateDifficultyScore(calculateScore(game.gameState.word), difficulty)
-    : 0;
-  const guessers = players.filter((p) => !p.isHost);
-  const currentGuesser = guessers[currentTurnIndex] ?? null;
-  const isMyTurn = !peer.isHost && currentGuesser?.id === peer.peerId;
-  const canPlay = phase === 'playing' && isMyTurn;
+    advanceTurn,
+    broadcastPlayersUpdate,
+    addEntry,
+  } = opts;
 
   useEffect(() => {
     if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
@@ -289,7 +278,7 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
       });
       startBroadcastSentRef.current = true;
     }
-  }, [peer, game.gameState, phase]);
+  }, [peer, game.gameState, phase, startBroadcastSentRef]);
 
   useEffect(() => {
     if (
@@ -318,16 +307,10 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     sessionScore,
     wordsWon,
     addEntry,
+    hasRecordedRef,
   ]);
 
   useEffect(() => {
-    const refs: PvPRefs = {
-      gameRef,
-      phaseRef,
-      playersRef,
-      currentTurnIndexRef,
-      startBroadcastSentRef,
-    };
     const actions: PvPActions = {
       isHost: peer.isHost,
       sendMessage: peer.sendMessage,
@@ -341,19 +324,82 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     return () => {
       peer.offMessage();
     };
-  }, [peer, advanceTurn, broadcastPlayersUpdate, setPlayers, setCurrentTurnIndex]);
+  }, [peer, setPhase, setPlayers, setCurrentTurnIndex, advanceTurn, broadcastPlayersUpdate, refs]);
+}
+
+export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionOptions) {
+  const [phase, setPhase] = useState<PvPPhase>('lobby');
+  const [joinId, setJoinId] = useState(initialJoinId);
+  const [customWord, setCustomWord] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
+  const peer = usePeerConnection();
+  const game = useGameLogic();
+  const { addEntry } = useLeaderboardStore();
+  const room = usePvPRoom(peer);
+  const {
+    players,
+    currentTurnIndex,
+    broadcastPlayersUpdate,
+    advanceTurn,
+    setPlayers,
+    setCurrentTurnIndex,
+  } = room;
+
+  const [sessionScore, setSessionScore] = useState(0);
+  const [wordsWon, setWordsWon] = useState(0);
+  const hasRecordedRef = useRef(false);
+  const startBroadcastSentRef = useRef(false);
+
+  const gameRef = useRef(game);
+  const phaseRef = useRef(phase);
+  const playersRef = useRef(players);
+  const currentTurnIndexRef = useRef(currentTurnIndex);
+  useEffect(() => {
+    gameRef.current = game;
+    phaseRef.current = phase;
+  }, [game, phase]);
+  useEffect(() => {
+    playersRef.current = players;
+    currentTurnIndexRef.current = currentTurnIndex;
+  }, [players, currentTurnIndex]);
+
+  const refs: PvPRefs = {
+    gameRef,
+    phaseRef,
+    playersRef,
+    currentTurnIndexRef,
+    startBroadcastSentRef,
+  };
+  const guessers = players.filter((p) => !p.isHost);
+  const currentGuesser = guessers[currentTurnIndex] ?? null;
+  const isMyTurn = !peer.isHost && currentGuesser?.id === peer.peerId;
+  const difficulty = game.gameState?.difficulty ?? 'normal';
+  const wordScore = game.gameState
+    ? calculateDifficultyScore(calculateScore(game.gameState.word), difficulty)
+    : 0;
+
+  usePvPEffects({
+    peer,
+    game,
+    phase,
+    setPhase,
+    playerName,
+    sessionScore,
+    wordsWon,
+    hasRecordedRef,
+    startBroadcastSentRef,
+    refs,
+    setPlayers,
+    setCurrentTurnIndex,
+    advanceTurn,
+    broadcastPlayersUpdate,
+    addEntry,
+  });
 
   const createRoom = useCallback(async () => {
     if (!playerName.trim()) return;
     const peerId = await peer.createRoom();
-    const hostPlayer: PvPPlayer = {
-      id: peerId,
-      name: playerName.trim(),
-      isHost: true,
-      isReady: true,
-      score: 0,
-    };
-    setPlayers([hostPlayer]);
+    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
     setCurrentTurnIndex(0);
     setPhase('waiting');
   }, [playerName, peer, setPlayers, setCurrentTurnIndex]);
@@ -371,6 +417,10 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
   const goToWordInput = useCallback(() => {
     setPhase('word-input');
   }, []);
+  const goBackToWaiting = useCallback(() => {
+    setPhase('waiting');
+  }, []);
+
   const startGameWithWord = useCallback(() => {
     if (!customWord.trim()) return;
     startBroadcastSentRef.current = false;
@@ -398,8 +448,9 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     const currentWord = game.gameState?.word;
     const currentDifficulty = game.gameState?.difficulty ?? 'normal';
     if (currentWord && !peer.isHost) {
-      const finalScore = calculateDifficultyScore(calculateScore(currentWord), currentDifficulty);
-      setSessionScore((prev) => prev + finalScore);
+      setSessionScore(
+        (prev) => prev + calculateDifficultyScore(calculateScore(currentWord), currentDifficulty)
+      );
       setWordsWon((prev) => prev + 1);
     }
     hasRecordedRef.current = false;
@@ -418,9 +469,6 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     setWordsWon(0);
     startBroadcastSentRef.current = false;
   }, [peer, setPlayers, setCurrentTurnIndex]);
-  const goBackToWaiting = useCallback(() => {
-    setPhase('waiting');
-  }, []);
 
   return {
     phase,
@@ -440,7 +488,7 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     currentTurnIndex,
     currentGuesser,
     isMyTurn,
-    canPlay,
+    canPlay: phase === 'playing' && isMyTurn,
     maxPlayers: MAX_PLAYERS,
     gameState: game.gameState,
     displayWord: game.displayWord,

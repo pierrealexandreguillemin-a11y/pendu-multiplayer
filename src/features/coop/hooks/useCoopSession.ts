@@ -12,12 +12,13 @@ import { useGameLogic } from '@/hooks/useGameLogic';
 import { useLeaderboardStore } from '@/stores/leaderboard';
 import { calculateScore } from '@/lib/game-engine';
 import { calculateDifficultyScore } from '@/lib/difficulty-config';
-import type { Letter, GameMessage } from '@/types/game';
+import type { Letter, GameMessage, LeaderboardEntry } from '@/types/game';
 import { MAX_PLAYERS } from '@/types/room';
+
+type AddEntryFn = (entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>) => void;
 
 export type CoopPhase = 'lobby' | 'waiting' | 'playing';
 
-/** Simple player info for room management */
 interface CoopPlayer {
   id: string;
   name: string;
@@ -31,7 +32,6 @@ interface UseCoopSessionOptions {
   initialJoinId?: string;
 }
 
-// Refs bundle passed to message handlers to avoid stale closures
 interface CoopRefs {
   gameRef: React.MutableRefObject<ReturnType<typeof useGameLogic>>;
   phaseRef: React.MutableRefObject<CoopPhase>;
@@ -104,9 +104,8 @@ function handlePlayerJoinMessage(
   const updatedPlayers = [...refs.playersRef.current, newPlayer];
   actions.setPlayers(updatedPlayers);
   actions.broadcastPlayersUpdate(updatedPlayers, refs.currentTurnIndexRef.current);
-  if (refs.phaseRef.current === 'playing' && refs.gameRef.current.gameState) {
+  if (refs.phaseRef.current === 'playing' && refs.gameRef.current.gameState)
     refs.startBroadcastSentRef.current = false;
-  }
 }
 
 function buildCoopMessageHandler(refs: CoopRefs, actions: CoopActions) {
@@ -156,10 +155,8 @@ function useCoopRoom(peer: ReturnType<typeof usePeerConnection>): CoopRoomState 
   const currentTurnIndexRef = useRef(currentTurnIndex);
   useEffect(() => {
     playersRef.current = players;
-  }, [players]);
-  useEffect(() => {
     currentTurnIndexRef.current = currentTurnIndex;
-  }, [currentTurnIndex]);
+  }, [players, currentTurnIndex]);
 
   const broadcastPlayersUpdate = useCallback(
     (playerList?: CoopPlayer[], turnIndex?: number) => {
@@ -228,14 +225,100 @@ function useCoopRoom(peer: ReturnType<typeof usePeerConnection>): CoopRoomState 
   };
 }
 
+interface CoopEffectsOptions {
+  peer: ReturnType<typeof usePeerConnection>;
+  game: ReturnType<typeof useGameLogic>;
+  phase: CoopPhase;
+  setPhase: (phase: CoopPhase) => void;
+  playerName: string;
+  sessionScore: number;
+  wordsWon: number;
+  hasRecordedRef: React.MutableRefObject<boolean>;
+  startBroadcastSentRef: React.MutableRefObject<boolean>;
+  refs: CoopRefs;
+  setPlayers: React.Dispatch<React.SetStateAction<CoopPlayer[]>>;
+  setCurrentTurnIndex: React.Dispatch<React.SetStateAction<number>>;
+  advanceTurn: () => void;
+  broadcastPlayersUpdate: (playerList?: CoopPlayer[], turnIndex?: number) => void;
+  addEntry: AddEntryFn;
+}
+
+function useCoopEffects(opts: CoopEffectsOptions) {
+  const {
+    peer,
+    game,
+    phase,
+    setPhase,
+    playerName,
+    sessionScore,
+    wordsWon,
+    hasRecordedRef,
+    startBroadcastSentRef,
+    refs,
+    setPlayers,
+    setCurrentTurnIndex,
+    advanceTurn,
+    broadcastPlayersUpdate,
+    addEntry,
+  } = opts;
+
+  useEffect(() => {
+    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
+      peer.sendMessage({
+        type: 'start',
+        payload: { word: game.gameState.word, category: game.gameState.category ?? '' },
+      });
+      startBroadcastSentRef.current = true;
+    }
+  }, [peer, game.gameState, phase, startBroadcastSentRef]);
+
+  useEffect(() => {
+    if (game.gameState?.status === 'lost' && playerName && !hasRecordedRef.current) {
+      hasRecordedRef.current = true;
+      addEntry({
+        playerName,
+        mode: 'coop',
+        score: sessionScore,
+        word: `${wordsWon} mots`,
+        errors: game.gameState.errors,
+        maxErrors: game.gameState.maxErrors,
+        won: false,
+      });
+    }
+  }, [
+    game.gameState?.status,
+    game.gameState?.errors,
+    game.gameState?.maxErrors,
+    playerName,
+    sessionScore,
+    wordsWon,
+    addEntry,
+    hasRecordedRef,
+  ]);
+
+  useEffect(() => {
+    const actions: CoopActions = {
+      isHost: peer.isHost,
+      sendMessage: peer.sendMessage,
+      setPhase,
+      setPlayers,
+      setCurrentTurnIndex,
+      advanceTurn,
+      broadcastPlayersUpdate,
+    };
+    peer.onMessage(buildCoopMessageHandler(refs, actions));
+    return () => {
+      peer.offMessage();
+    };
+  }, [peer, setPhase, setPlayers, setCurrentTurnIndex, advanceTurn, broadcastPlayersUpdate, refs]);
+}
+
 export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessionOptions) {
   const [phase, setPhase] = useState<CoopPhase>('lobby');
   const [joinId, setJoinId] = useState(initialJoinId);
-
   const peer = usePeerConnection();
   const game = useGameLogic();
   const { addEntry } = useLeaderboardStore();
-
   const room = useCoopRoom(peer);
   const {
     players,
@@ -264,81 +347,43 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     currentTurnIndexRef.current = currentTurnIndex;
   }, [players, currentTurnIndex]);
 
+  const refs: CoopRefs = {
+    gameRef,
+    phaseRef,
+    playersRef,
+    currentTurnIndexRef,
+    startBroadcastSentRef,
+  };
+
   const difficulty = game.gameState?.difficulty ?? 'normal';
   const wordScore = game.gameState
     ? calculateDifficultyScore(calculateScore(game.gameState.word), difficulty)
     : 0;
   const currentPlayer = players[currentTurnIndex] ?? null;
   const isMyTurn = currentPlayer?.id === peer.peerId;
-  const canPlay = phase === 'playing' && isMyTurn;
 
-  useEffect(() => {
-    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
-      peer.sendMessage({
-        type: 'start',
-        payload: { word: game.gameState.word, category: game.gameState.category ?? '' },
-      });
-      startBroadcastSentRef.current = true;
-    }
-  }, [peer, game.gameState, phase]);
-
-  useEffect(() => {
-    if (game.gameState?.status === 'lost' && playerName && !hasRecordedRef.current) {
-      hasRecordedRef.current = true;
-      addEntry({
-        playerName,
-        mode: 'coop',
-        score: sessionScore,
-        word: `${wordsWon} mots`,
-        errors: game.gameState.errors,
-        maxErrors: game.gameState.maxErrors,
-        won: false,
-      });
-    }
-  }, [
-    game.gameState?.status,
-    game.gameState?.errors,
-    game.gameState?.maxErrors,
+  useCoopEffects({
+    peer,
+    game,
+    phase,
+    setPhase,
     playerName,
     sessionScore,
     wordsWon,
+    hasRecordedRef,
+    startBroadcastSentRef,
+    refs,
+    setPlayers,
+    setCurrentTurnIndex,
+    advanceTurn,
+    broadcastPlayersUpdate,
     addEntry,
-  ]);
-
-  useEffect(() => {
-    const refs: CoopRefs = {
-      gameRef,
-      phaseRef,
-      playersRef,
-      currentTurnIndexRef,
-      startBroadcastSentRef,
-    };
-    const actions: CoopActions = {
-      isHost: peer.isHost,
-      sendMessage: peer.sendMessage,
-      setPhase,
-      setPlayers,
-      setCurrentTurnIndex,
-      advanceTurn,
-      broadcastPlayersUpdate,
-    };
-    peer.onMessage(buildCoopMessageHandler(refs, actions));
-    return () => {
-      peer.offMessage();
-    };
-  }, [peer, advanceTurn, broadcastPlayersUpdate, setPlayers, setCurrentTurnIndex]);
+  });
 
   const createRoom = useCallback(async () => {
     if (!playerName.trim()) return;
     const peerId = await peer.createRoom();
-    const hostPlayer: CoopPlayer = {
-      id: peerId,
-      name: playerName.trim(),
-      isHost: true,
-      isReady: true,
-      score: 0,
-    };
-    setPlayers([hostPlayer]);
+    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
     setCurrentTurnIndex(0);
     setPhase('waiting');
   }, [playerName, peer, setPlayers, setCurrentTurnIndex]);
@@ -364,8 +409,9 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     const currentWord = game.gameState?.word;
     const currentDifficulty = game.gameState?.difficulty ?? 'normal';
     if (currentWord) {
-      const finalScore = calculateDifficultyScore(calculateScore(currentWord), currentDifficulty);
-      setSessionScore((prev) => prev + finalScore);
+      setSessionScore(
+        (prev) => prev + calculateDifficultyScore(calculateScore(currentWord), currentDifficulty)
+      );
       setWordsWon((prev) => prev + 1);
     }
     hasRecordedRef.current = false;
@@ -409,7 +455,7 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     currentTurnIndex,
     currentPlayer,
     isMyTurn,
-    canPlay,
+    canPlay: phase === 'playing' && isMyTurn,
     maxPlayers: MAX_PLAYERS,
     gameState: game.gameState,
     displayWord: game.displayWord,
