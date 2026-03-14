@@ -6,7 +6,7 @@
  */
 
 import type { DifficultyLevel } from '@/types/difficulty';
-import type { WordEntry } from './words';
+import type { WordEntry } from '@/types/word';
 import { WORD_CLASSIFICATIONS, type ClassifiedWordEntry } from './word-classifications';
 
 export interface ClassifiedWord extends WordEntry {

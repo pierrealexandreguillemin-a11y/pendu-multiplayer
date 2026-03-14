@@ -16,7 +16,7 @@ import {
   resetSessionMemory,
   type SessionMemoryState,
 } from '@/lib/session-memory';
-import type { WordEntry } from '@/lib/words';
+import type { WordEntry } from '@/types/word';
 
 interface UseSessionMemoryReturn {
   /** Select next word and mark it as used */

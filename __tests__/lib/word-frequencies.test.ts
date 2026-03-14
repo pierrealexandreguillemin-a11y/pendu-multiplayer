@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getWordFrequencyScore, WORD_FREQUENCY_SCORES } from '@/lib/word-frequencies';
-import { WORDS } from '@/lib/words';
+import { CLASSIFIED_WORDS } from '@/lib/words-difficulty';
 
 describe('word-frequencies', () => {
   describe('WORD_FREQUENCY_SCORES', () => {
@@ -35,7 +35,7 @@ describe('word-frequencies', () => {
     });
 
     it('should cover all 120 words from the word list', () => {
-      for (const entry of WORDS) {
+      for (const entry of CLASSIFIED_WORDS) {
         const score = getWordFrequencyScore(entry.word);
         expect(score, `Missing frequency for "${entry.word}" — got default ${score}`).toBeLessThan(
           0.8
