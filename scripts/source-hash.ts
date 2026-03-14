@@ -10,7 +10,7 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 
 /** Files that affect the generated word-classifications.ts */
-const SOURCE_FILES = [
+export const SOURCE_FILES = [
   'src/lib/words.ts',
   'src/lib/letter-frequencies.ts',
   'src/lib/bigram-frequencies.ts',
