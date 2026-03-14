@@ -41,7 +41,7 @@ interface PeerRefs {
 }
 
 interface PeerSetters {
-  setPeerId: (id: string) => void;
+  setPeerId: (id: string | null) => void;
   setStatus: (s: ConnectionStatus) => void;
   setError: (e: string | null) => void;
   setConnectedPeers: (peers: string[]) => void;
@@ -226,6 +226,41 @@ function makeJoinRoom(
     });
 }
 
+function makeDisconnect(refs: PeerRefs, setters: PeerSetters, setIsHost: (v: boolean) => void) {
+  return () => {
+    if (refs.reconnectTimerRef.current !== null) {
+      clearTimeout(refs.reconnectTimerRef.current);
+      refs.reconnectTimerRef.current = null;
+    }
+    refs.reconnectAttemptsRef.current = 0;
+    refs.hostIdRef.current = null;
+    refs.connectionsRef.current.forEach((conn) => conn.close());
+    refs.connectionsRef.current.clear();
+    refs.peerRef.current?.destroy();
+    refs.peerRef.current = null;
+    setters.setPeerId(null);
+    setters.setStatus('disconnected');
+    setters.setConnectedPeers([]);
+    setIsHost(false);
+    setters.setError(null);
+    refs.messageBufferRef.current = [];
+    refs.messageHandlerRef.current = null;
+  };
+}
+
+function makeOnMessage(refs: PeerRefs) {
+  return (handler: MessageHandler) => {
+    refs.messageHandlerRef.current = handler;
+    if (refs.messageBufferRef.current.length > 0) {
+      const buffered = [...refs.messageBufferRef.current];
+      refs.messageBufferRef.current = [];
+      buffered.forEach(({ message, fromId }) => {
+        handler(message, fromId);
+      });
+    }
+  };
+}
+
 /**
  * ISO/IEC 25010 - Reliability: Improved peer connection hook with message buffering
  * Messages received before handler registration are buffered and processed when handler is set
@@ -284,37 +319,10 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     });
   }, []);
 
-  const disconnect = useCallback(() => {
-    if (reconnectTimerRef.current !== null) {
-      clearTimeout(reconnectTimerRef.current);
-      reconnectTimerRef.current = null;
-    }
-    reconnectAttemptsRef.current = 0;
-    hostIdRef.current = null;
-    connectionsRef.current.forEach((conn) => conn.close());
-    connectionsRef.current.clear();
-    peerRef.current?.destroy();
-    peerRef.current = null;
-    setPeerId(null);
-    setStatus('disconnected');
-    setConnectedPeers([]);
-    setIsHost(false);
-    setError(null);
-    messageBufferRef.current = [];
-    messageHandlerRef.current = null;
-  }, []);
-
-  const onMessage = useCallback((handler: MessageHandler) => {
-    messageHandlerRef.current = handler;
-    if (messageBufferRef.current.length > 0) {
-      const buffered = [...messageBufferRef.current];
-      messageBufferRef.current = [];
-      buffered.forEach(({ message, fromId }) => {
-        handler(message, fromId);
-      });
-    }
-  }, []);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const disconnect = useCallback(makeDisconnect(refs, setters, setIsHost), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const onMessage = useCallback(makeOnMessage(refs), []);
   const offMessage = useCallback(() => {
     messageHandlerRef.current = null;
     messageBufferRef.current = [];
@@ -327,8 +335,9 @@ export function usePeerConnection(): UsePeerConnectionReturn {
   }, []);
 
   useEffect(() => {
+    const peer = peerRef;
     return () => {
-      peerRef.current?.destroy();
+      peer.current?.destroy();
     };
   }, []);
 

@@ -327,6 +327,150 @@ function usePvPEffects(opts: PvPEffectsOptions) {
   }, [peer, setPhase, setPlayers, setCurrentTurnIndex, advanceTurn, broadcastPlayersUpdate, refs]);
 }
 
+interface PvPCallbacksOptions {
+  playerName: string;
+  joinId: string;
+  customWord: string;
+  customCategory: string;
+  peer: ReturnType<typeof usePeerConnection>;
+  game: ReturnType<typeof useGameLogic>;
+  isMyTurn: boolean;
+  phase: PvPPhase;
+  setPlayers: React.Dispatch<React.SetStateAction<PvPPlayer[]>>;
+  setCurrentTurnIndex: React.Dispatch<React.SetStateAction<number>>;
+  setPhase: (phase: PvPPhase) => void;
+  setSessionScore: React.Dispatch<React.SetStateAction<number>>;
+  setWordsWon: React.Dispatch<React.SetStateAction<number>>;
+  setCustomWord: React.Dispatch<React.SetStateAction<string>>;
+  setCustomCategory: React.Dispatch<React.SetStateAction<string>>;
+  startBroadcastSentRef: React.MutableRefObject<boolean>;
+  hasRecordedRef: React.MutableRefObject<boolean>;
+}
+
+function usePvPCallbacks(opts: PvPCallbacksOptions) {
+  const {
+    playerName,
+    joinId,
+    customWord,
+    customCategory,
+    peer,
+    game,
+    isMyTurn,
+    phase,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase,
+    setSessionScore,
+    setWordsWon,
+    setCustomWord,
+    setCustomCategory,
+    startBroadcastSentRef,
+    hasRecordedRef,
+  } = opts;
+
+  const createRoom = useCallback(async () => {
+    if (!playerName.trim()) return;
+    const peerId = await peer.createRoom();
+    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
+    setCurrentTurnIndex(0);
+    setPhase('waiting');
+  }, [playerName, peer, setPlayers, setCurrentTurnIndex, setPhase]);
+
+  const joinRoom = useCallback(async () => {
+    if (!playerName.trim() || !joinId.trim()) return;
+    const myPeerId = await peer.joinRoom(joinId.trim());
+    peer.sendMessage({
+      type: 'player_join',
+      payload: { playerId: myPeerId, playerName: playerName.trim() },
+    });
+    setPhase('waiting');
+  }, [playerName, joinId, peer, setPhase]);
+
+  const goToWordInput = useCallback(() => {
+    setPhase('word-input');
+  }, [setPhase]);
+  const goBackToWaiting = useCallback(() => {
+    setPhase('waiting');
+  }, [setPhase]);
+
+  const startGameWithWord = useCallback(() => {
+    if (!customWord.trim()) return;
+    startBroadcastSentRef.current = false;
+    game.startGame(customWord.trim(), customCategory.trim() || 'PvP');
+    setPhase('playing');
+  }, [customWord, customCategory, game, setPhase, startBroadcastSentRef]);
+
+  const handleGuess = useCallback(
+    (letter: Letter) => {
+      if (peer.isHost) {
+        console.warn('[PvP] Host cannot guess!');
+        return;
+      }
+      if (!isMyTurn && phase === 'playing') {
+        console.warn('[PvP] Not your turn!');
+        return;
+      }
+      game.guess(letter);
+      peer.sendMessage({ type: 'guess', payload: { letter } });
+    },
+    [game, peer, isMyTurn, phase]
+  );
+
+  const continueSession = useCallback(() => {
+    const currentWord = game.gameState?.word;
+    const currentDifficulty = game.gameState?.difficulty ?? 'normal';
+    if (currentWord && !peer.isHost) {
+      setSessionScore(
+        (prev) => prev + calculateDifficultyScore(calculateScore(currentWord), currentDifficulty)
+      );
+      setWordsWon((prev) => prev + 1);
+    }
+    hasRecordedRef.current = false;
+    setCustomWord('');
+    setCustomCategory('');
+    setPhase('word-input');
+    peer.sendMessage({ type: 'restart', payload: {} });
+  }, [
+    game,
+    peer,
+    setSessionScore,
+    setWordsWon,
+    hasRecordedRef,
+    setCustomWord,
+    setCustomCategory,
+    setPhase,
+  ]);
+
+  const endSession = useCallback(() => {
+    peer.disconnect();
+    setPhase('lobby');
+    setPlayers([]);
+    setCurrentTurnIndex(0);
+    setSessionScore(0);
+    setWordsWon(0);
+    startBroadcastSentRef.current = false;
+  }, [
+    peer,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase,
+    setSessionScore,
+    setWordsWon,
+    startBroadcastSentRef,
+  ]);
+
+  return {
+    createRoom,
+    joinRoom,
+    goToWordInput,
+    goBackToWaiting,
+    startGameWithWord,
+    handleGuess,
+    continueSession,
+    endSession,
+  };
+}
+
 export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionOptions) {
   const [phase, setPhase] = useState<PvPPhase>('lobby');
   const [joinId, setJoinId] = useState(initialJoinId);
@@ -396,79 +540,25 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     addEntry,
   });
 
-  const createRoom = useCallback(async () => {
-    if (!playerName.trim()) return;
-    const peerId = await peer.createRoom();
-    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
-    setCurrentTurnIndex(0);
-    setPhase('waiting');
-  }, [playerName, peer, setPlayers, setCurrentTurnIndex]);
-
-  const joinRoom = useCallback(async () => {
-    if (!playerName.trim() || !joinId.trim()) return;
-    const myPeerId = await peer.joinRoom(joinId.trim());
-    peer.sendMessage({
-      type: 'player_join',
-      payload: { playerId: myPeerId, playerName: playerName.trim() },
-    });
-    setPhase('waiting');
-  }, [playerName, joinId, peer]);
-
-  const goToWordInput = useCallback(() => {
-    setPhase('word-input');
-  }, []);
-  const goBackToWaiting = useCallback(() => {
-    setPhase('waiting');
-  }, []);
-
-  const startGameWithWord = useCallback(() => {
-    if (!customWord.trim()) return;
-    startBroadcastSentRef.current = false;
-    game.startGame(customWord.trim(), customCategory.trim() || 'PvP');
-    setPhase('playing');
-  }, [customWord, customCategory, game]);
-
-  const handleGuess = useCallback(
-    (letter: Letter) => {
-      if (peer.isHost) {
-        console.warn('[PvP] Host cannot guess!');
-        return;
-      }
-      if (!isMyTurn && phase === 'playing') {
-        console.warn('[PvP] Not your turn!');
-        return;
-      }
-      game.guess(letter);
-      peer.sendMessage({ type: 'guess', payload: { letter } });
-    },
-    [game, peer, isMyTurn, phase]
-  );
-
-  const continueSession = useCallback(() => {
-    const currentWord = game.gameState?.word;
-    const currentDifficulty = game.gameState?.difficulty ?? 'normal';
-    if (currentWord && !peer.isHost) {
-      setSessionScore(
-        (prev) => prev + calculateDifficultyScore(calculateScore(currentWord), currentDifficulty)
-      );
-      setWordsWon((prev) => prev + 1);
-    }
-    hasRecordedRef.current = false;
-    setCustomWord('');
-    setCustomCategory('');
-    setPhase('word-input');
-    peer.sendMessage({ type: 'restart', payload: {} });
-  }, [game, peer]);
-
-  const endSession = useCallback(() => {
-    peer.disconnect();
-    setPhase('lobby');
-    setPlayers([]);
-    setCurrentTurnIndex(0);
-    setSessionScore(0);
-    setWordsWon(0);
-    startBroadcastSentRef.current = false;
-  }, [peer, setPlayers, setCurrentTurnIndex]);
+  const callbacks = usePvPCallbacks({
+    playerName,
+    joinId,
+    customWord,
+    customCategory,
+    peer,
+    game,
+    isMyTurn,
+    phase,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase,
+    setSessionScore,
+    setWordsWon,
+    setCustomWord,
+    setCustomCategory,
+    startBroadcastSentRef,
+    hasRecordedRef,
+  });
 
   return {
     phase,
@@ -495,13 +585,6 @@ export function usePvPSession({ playerName, initialJoinId = '' }: UsePvPSessionO
     sessionScore,
     wordsWon,
     wordScore,
-    createRoom,
-    joinRoom,
-    goToWordInput,
-    goBackToWaiting,
-    startGameWithWord,
-    handleGuess,
-    continueSession,
-    endSession,
+    ...callbacks,
   };
 }
