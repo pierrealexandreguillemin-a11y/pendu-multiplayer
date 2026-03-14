@@ -6,8 +6,8 @@
  * ISO/IEC 5055 - Code Quality: Pure functions, no side effects
  */
 
-import type { WordEntry } from './words';
-import { WORDS } from './words';
+import type { WordEntry } from '@/types/word';
+import { CLASSIFIED_WORDS } from './words-difficulty';
 
 /**
  * Session memory state tracking used words
@@ -25,7 +25,7 @@ export interface SessionMemoryState {
 export function createSessionMemory(): SessionMemoryState {
   return {
     usedWords: new Set(),
-    totalWords: WORDS.length,
+    totalWords: CLASSIFIED_WORDS.length,
   };
 }
 
@@ -39,8 +39,8 @@ export function createSessionMemory(): SessionMemoryState {
 export function getNextWord(state: SessionMemoryState, category?: string): WordEntry | null {
   // Filter by category if provided
   let candidates = category
-    ? WORDS.filter((w) => w.category.toLowerCase() === category.toLowerCase())
-    : WORDS;
+    ? CLASSIFIED_WORDS.filter((w) => w.category.toLowerCase() === category.toLowerCase())
+    : CLASSIFIED_WORDS;
 
   // Exclude already-used words (compare normalized uppercase)
   candidates = candidates.filter((w) => !state.usedWords.has(w.word.toUpperCase()));
@@ -82,8 +82,8 @@ export function recordWordUsed(state: SessionMemoryState, word: string): Session
  */
 export function hasWordsRemaining(state: SessionMemoryState, category?: string): boolean {
   const candidates = category
-    ? WORDS.filter((w) => w.category.toLowerCase() === category.toLowerCase())
-    : WORDS;
+    ? CLASSIFIED_WORDS.filter((w) => w.category.toLowerCase() === category.toLowerCase())
+    : CLASSIFIED_WORDS;
 
   return candidates.some((w) => !state.usedWords.has(w.word.toUpperCase()));
 }
