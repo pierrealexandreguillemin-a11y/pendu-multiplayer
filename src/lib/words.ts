@@ -3,10 +3,8 @@
  * Words are categorized for optional hints
  */
 
-export interface WordEntry {
-  word: string;
-  category: string;
-}
+import type { WordEntry } from '@/types/word';
+export type { WordEntry };
 
 export const WORDS: WordEntry[] = [
   // Animaux
