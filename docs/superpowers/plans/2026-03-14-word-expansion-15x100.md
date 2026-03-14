@@ -1,6 +1,6 @@
 # Word Expansion — 15 Categories × ~100 Words
 
-> **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Status: COMPLETED** — 2026-03-15. 1696 words, 15 categories (all ≥100), 155 unit tests + 156 E2E. Deployed.
 
 **Goal:** Expand the hangman word corpus from 120 words (8 categories) to ~1500 words (15 categories), migrating from a hardcoded TypeScript file to a CSV source of truth.
 
