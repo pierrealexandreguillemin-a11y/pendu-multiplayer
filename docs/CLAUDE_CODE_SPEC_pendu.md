@@ -126,9 +126,11 @@ pendu/
 │   │   ├── usePlayerName.ts         # Memorisation pseudo
 │   │   └── useSound.ts             # Audio feedback
 │   │
+│   ├── data/                         # Data sources
+│   │   └── words.csv                # 1696 mots français (CSV source)
+│   │
 │   ├── lib/                          # DOMAIN + INFRASTRUCTURE
 │   │   ├── game-engine.ts           # Logique metier pure (0 dependance)
-│   │   ├── words.ts                 # 200+ mots francais
 │   │   ├── words-difficulty.ts      # Calcul difficulte mots
 │   │   ├── difficulty-config.ts     # Configuration niveaux
 │   │   ├── message-validation.ts    # Validation Zod P2P
@@ -141,6 +143,7 @@ pendu/
 │   │
 │   └── types/                        # DOMAIN - Types TypeScript
 │       ├── game.ts                  # GameState, GameMessage, Letter
+│       ├── word.ts                  # WordEntry interface
 │       ├── room.ts                  # Room, Player, MAX_PLAYERS
 │       └── difficulty.ts            # DifficultyLevel, config
 │

@@ -1,7 +1,7 @@
 /**
  * Generate Word Classifications
  *
- * Reads words from src/lib/words.ts, computes composite difficulty
+ * Reads words from data/words.csv via parseWordsCsv, computes composite difficulty
  * scores, and generates src/lib/word-classifications.ts.
  *
  * Usage: npx tsx scripts/generate-word-classifications.ts

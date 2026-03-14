@@ -17,6 +17,8 @@ llm-context: >
 
 Le jeu dispose actuellement de 120 mots répartis dans 8 catégories (15 mots chacune). Cette taille limite la rejouabilité et la variété des parties. L'objectif est de passer à ~1500 mots dans 15 catégories (~100 mots par catégorie).
 
+> **Note finale:** Le corpus final contient 1696 mots (objectif initial ~1500 atteint et dépassé).
+
 ## ADR — Restructuration des catégories
 
 ### Problème
