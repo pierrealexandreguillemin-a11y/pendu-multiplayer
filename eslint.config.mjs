@@ -20,7 +20,7 @@ const eslintConfig = defineConfig([
   // All thresholds enforced as errors — zero tolerance
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/lib/word-classifications.ts'],
+    ignores: ['src/lib/word-classifications.ts', 'src/lib/word-frequencies.ts'],
     rules: {
       complexity: ['error', { max: 15 }],
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
@@ -32,7 +32,7 @@ const eslintConfig = defineConfig([
   // Stricter rules for new code (lib layer — no legacy UI)
   {
     files: ['src/lib/**/*.ts'],
-    ignores: ['src/lib/word-classifications.ts'],
+    ignores: ['src/lib/word-classifications.ts', 'src/lib/word-frequencies.ts'],
     rules: {
       complexity: ['error', { max: 10 }],
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
