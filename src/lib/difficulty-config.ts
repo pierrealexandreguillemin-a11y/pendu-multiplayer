@@ -17,12 +17,12 @@ import type { DifficultyLevel, DifficultyConfig } from '@/types/difficulty';
  * Easy: For beginners and casual players
  * - More attempts (10 errors)
  * - Category hint visible
- * - Score ≤ 47
+ * - Score ≤ 49
  *
  * Normal: Standard gameplay
  * - Standard attempts (7 errors)
  * - Category hint visible
- * - Score ≤ 54
+ * - Score ≤ 55
  *
  * Hard: For experienced players
  * - Fewer attempts (5 errors)
@@ -34,7 +34,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
     level: 'easy',
     maxErrors: 10,
     showCategory: true,
-    scoreThreshold: 47,
+    scoreThreshold: 49,
     scoreMultiplier: 1,
     label: 'Facile',
     description: '10 essais, mots faciles, catégorie visible',
@@ -43,7 +43,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
     level: 'normal',
     maxErrors: 7,
     showCategory: true,
-    scoreThreshold: 54,
+    scoreThreshold: 55,
     scoreMultiplier: 1.5,
     label: 'Normal',
     description: '7 essais, mots intermédiaires, catégorie visible',

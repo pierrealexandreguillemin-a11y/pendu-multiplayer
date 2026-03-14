@@ -59,8 +59,8 @@ describe('difficulty-config', () => {
     });
 
     it('should have correct scoreThreshold values', () => {
-      expect(DIFFICULTY_CONFIGS.easy.scoreThreshold).toBe(47);
-      expect(DIFFICULTY_CONFIGS.normal.scoreThreshold).toBe(54);
+      expect(DIFFICULTY_CONFIGS.easy.scoreThreshold).toBe(49);
+      expect(DIFFICULTY_CONFIGS.normal.scoreThreshold).toBe(55);
       expect(DIFFICULTY_CONFIGS.hard.scoreThreshold).toBe(100);
     });
 
