@@ -14,15 +14,69 @@
 
 ---
 
+## Definition of Done (DoD) — applies to EVERY task
+
+A task is **not done** unless ALL of the following are true:
+
+1. **Tests pass:** `npx vitest run` — 0 failures, 0 skipped
+2. **Types pass:** `npm run typecheck` — 0 errors
+3. **Lint passes:** `npm run lint` — 0 warnings, 0 errors
+4. **Committed:** Changes committed via pre-commit hook (which enforces 1-3 automatically)
+5. **No regressions:** Test count ≥ previous commit's test count (new tests were added, none removed without replacement)
+6. **No TODO/FIXME debt:** No `TODO`, `FIXME`, or `HACK` left in committed code unless explicitly documented in this plan
+
+## Quality Gate Protocol
+
+At each chunk boundary, run the **full quality gate** before proceeding:
+
+```bash
+# Quality Gate — run ALL of these, ALL must pass
+npm run typecheck          # TypeScript compilation
+npm run lint               # ESLint
+npx vitest run             # Unit tests
+npm run build              # Next.js production build (catches runtime import issues vitest misses)
+```
+
+**If `npm run build` fails:** The most likely cause is a circular import or a module that imports Node.js-only APIs (like `crypto`, `fs`) into client-side code. The generation script and check script must NOT be importable from browser code paths.
+
+**Failure protocol:** If any quality gate check fails, do NOT proceed to the next chunk. Fix the issue first. If the fix requires backtracking to a previous task, document what changed and why.
+
+## Rollback Strategy
+
+Each chunk produces independent, committed units. If a chunk fails its quality gate:
+1. Identify the breaking commit via `git log --oneline`
+2. `git revert <commit>` the breaking change (do NOT use `reset --hard`)
+3. Fix and recommit
+
+## Consumer Smoke Test
+
+After Chunk 3 (integration), verify that the 3 consumer hooks still work correctly by running:
+
+```bash
+npx vitest run __tests__/lib/words-difficulty.test.ts
+npx vitest run __tests__/lib/game-engine.test.ts
+```
+
+These tests exercise `getRandomWordByDifficulty()` which is the primary consumer API. If they pass, the integration is correct.
+
+---
+
 ## Chunk 1: Foundation — Types, Static Data Tables, and Score Algorithm
 
 ### Task 0: Install tsx as devDependency
+
+**DoD:** `npx tsx --version` returns >= 4.7. `package.json` lists tsx in devDependencies.
 
 - [ ] **Step 1: Install tsx**
 
 Run: `npm install -D tsx`
 
-- [ ] **Step 2: Commit**
+- [ ] **Step 2: Verify installation**
+
+Run: `npx tsx --version`
+Expected: `tsx v4.x.x` (>= 4.7)
+
+- [ ] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -32,6 +86,12 @@ git commit -m "chore: add tsx as devDependency for script execution"
 ---
 
 ### Task 1: Update DifficultyConfig type — replace wordLengthRange with scoreThresholds
+
+**DoD:**
+- `wordLengthRange` does NOT appear anywhere in `src/` or `__tests__/` (verify: `grep -r "wordLengthRange" src/ __tests__/` returns nothing)
+- `DifficultyScoreBreakdown` type is exported from `src/types/difficulty.ts`
+- `scoreThresholds` values are `{ easy: 38, normal: 64, hard: 100 }`
+- All 108+ tests pass
 
 **Important:** This task updates types, config, words-difficulty.ts (to remove `wordLengthRange` usage), AND all related tests in a single commit to keep the test suite green throughout. The pre-commit hook runs `npm run test:run`, so tests must pass at every commit.
 
@@ -203,6 +263,12 @@ git commit -m "refactor(difficulty): replace wordLengthRange with scoreThreshold
 
 ### Task 2: Create letter frequency table
 
+**DoD:**
+- 26 letters covered (A-Z), no gaps
+- Scores monotonically increase from most common (E≈0) to rarest (W≈1)
+- `getLetterRarityScore()` handles uppercase, lowercase, and non-letter input
+- 8+ tests pass
+
 **Files:**
 - Create: `src/lib/letter-frequencies.ts`
 - Create: `__tests__/lib/letter-frequencies.test.ts`
@@ -222,16 +288,26 @@ describe('letter-frequencies', () => {
   describe('LETTER_RARITY_SCORES', () => {
     it('should have scores for all 26 letters', () => {
       expect(Object.keys(LETTER_RARITY_SCORES)).toHaveLength(26);
+      // Verify A-Z completeness
+      for (let i = 65; i <= 90; i++) {
+        const letter = String.fromCharCode(i);
+        expect(LETTER_RARITY_SCORES[letter]).toBeDefined();
+      }
     });
 
     it('should have all scores between 0 and 1', () => {
-      for (const [, score] of Object.entries(LETTER_RARITY_SCORES)) {
-        expect(score).toBeGreaterThanOrEqual(0);
-        expect(score).toBeLessThanOrEqual(1);
+      for (const [letter, score] of Object.entries(LETTER_RARITY_SCORES)) {
+        expect(score, `${letter} score out of range`).toBeGreaterThanOrEqual(0);
+        expect(score, `${letter} score out of range`).toBeLessThanOrEqual(1);
       }
     });
 
     it('should have E as most common (lowest rarity)', () => {
+      const minEntry = Object.entries(LETTER_RARITY_SCORES).reduce(
+        (min, [k, v]) => (v < min[1] ? [k, v] : min),
+        ['', 1]
+      );
+      expect(minEntry[0]).toBe('E');
       expect(LETTER_RARITY_SCORES.E).toBeLessThan(0.1);
     });
 
@@ -240,18 +316,36 @@ describe('letter-frequencies', () => {
       expect(LETTER_RARITY_SCORES.K).toBeGreaterThan(0.9);
       expect(LETTER_RARITY_SCORES.X).toBeGreaterThan(0.8);
       expect(LETTER_RARITY_SCORES.Z).toBeGreaterThan(0.8);
+      expect(LETTER_RARITY_SCORES.Q).toBeGreaterThan(0.8);
+    });
+
+    it('should have common letters ordered correctly', () => {
+      // E < A < S (top 3 in French)
+      expect(LETTER_RARITY_SCORES.E).toBeLessThan(LETTER_RARITY_SCORES.A!);
+      expect(LETTER_RARITY_SCORES.A).toBeLessThan(LETTER_RARITY_SCORES.S!);
     });
   });
 
   describe('getLetterRarityScore', () => {
-    it('should return rarity for valid letters', () => {
+    it('should return rarity for uppercase letters', () => {
       expect(getLetterRarityScore('E')).toBeLessThan(0.1);
-      expect(getLetterRarityScore('e')).toBeLessThan(0.1);
+      expect(getLetterRarityScore('W')).toBeGreaterThan(0.9);
     });
 
-    it('should return 1 for unknown characters', () => {
+    it('should return rarity for lowercase letters (case-insensitive)', () => {
+      expect(getLetterRarityScore('e')).toBe(getLetterRarityScore('E'));
+      expect(getLetterRarityScore('w')).toBe(getLetterRarityScore('W'));
+    });
+
+    it('should return 1 for non-letter characters', () => {
       expect(getLetterRarityScore('-')).toBe(1);
       expect(getLetterRarityScore(' ')).toBe(1);
+      expect(getLetterRarityScore('1')).toBe(1);
+      expect(getLetterRarityScore('é')).toBe(1);
+    });
+
+    it('should return 1 for empty string', () => {
+      expect(getLetterRarityScore('')).toBe(1);
     });
   });
 });
@@ -331,6 +425,12 @@ git commit -m "feat(difficulty): add French letter rarity score table"
 ---
 
 ### Task 3: Create bigram frequency table
+
+**DoD:**
+- At least 30 bigrams in the set (spec requirement)
+- Set contains only 2-character uppercase strings
+- `isBigramCommon()` is case-insensitive
+- 5+ tests pass
 
 **Files:**
 - Create: `src/lib/bigram-frequencies.ts`
@@ -437,6 +537,12 @@ git commit -m "feat(difficulty): add French common bigram table"
 
 ### Task 4: Create word frequency lookup
 
+**DoD:**
+- All 120 words from `words.ts` have a frequency score in the map
+- Scores range from 0 (common) to 1 (rare), default 0.8 for unknown words
+- Lookup is case-insensitive AND accent-insensitive
+- 6+ tests pass
+
 **Files:**
 - Create: `src/lib/word-frequencies.ts`
 - Create: `__tests__/lib/word-frequencies.test.ts`
@@ -490,6 +596,18 @@ describe('word-frequencies', () => {
       // "éléphant" should be found (normalized)
       const score = getWordFrequencyScore('éléphant');
       expect(score).toBeLessThan(1);
+    });
+
+    it('should cover all 120 words from the word list', () => {
+      // Import the word list dynamically to verify coverage
+      const { WORDS } = require('@/lib/words');
+      for (const entry of WORDS) {
+        const score = getWordFrequencyScore(entry.word);
+        expect(
+          score,
+          `Missing frequency for "${entry.word}" — got default ${score}`
+        ).toBeLessThan(0.8); // Should NOT return the default 0.8
+      }
     });
   });
 });
@@ -595,9 +713,33 @@ git commit -m "feat(difficulty): add word frequency lookup"
 
 ---
 
+### Chunk 1 Quality Gate
+
+Before proceeding, run the full quality gate:
+
+```bash
+npm run typecheck && npm run lint && npx vitest run && npm run build
+```
+
+**All must pass.** Additionally verify:
+- [ ] `grep -r "wordLengthRange" src/ __tests__/` returns nothing
+- [ ] Test count has increased (was 108, should be ~130+ with new test files)
+- [ ] New files exist: `src/lib/letter-frequencies.ts`, `src/lib/bigram-frequencies.ts`, `src/lib/word-frequencies.ts`
+- [ ] Each new file has a corresponding test in `__tests__/lib/`
+
+---
+
 ## Chunk 2: Score Computation and Generation Script
 
 ### Task 5: Create the composite score computation module
+
+**DoD:**
+- `computeDifficultyScore()` returns a `DifficultyScoreBreakdown` with all 6 sub-scores (0-1) and total (0-100)
+- All 6 weights sum to 1.0 (0.30 + 0.20 + 0.15 + 0.15 + 0.10 + 0.10)
+- `normalizeWord()` handles accents, hyphens, spaces, mixed case
+- Edge cases: single-letter words, words with all vowels, words with all consonants, empty string
+- Words with rare letters (kiwi) score higher than words with common letters (pomme)
+- 10+ tests pass
 
 **Files:**
 - Create: `src/lib/difficulty-scorer.ts`
@@ -680,6 +822,44 @@ describe('difficulty-scorer', () => {
     it('should use Math.round for total', () => {
       const result = computeDifficultyScore('pomme');
       expect(result.total).toBe(Math.round(result.total));
+    });
+
+    it('should handle single-letter word', () => {
+      const result = computeDifficultyScore('a');
+      expect(result.total).toBeGreaterThanOrEqual(0);
+      expect(result.total).toBeLessThanOrEqual(100);
+      expect(result.uniqueLetters).toBe(1); // 1/1
+    });
+
+    it('should handle all-vowel word', () => {
+      const result = computeDifficultyScore('eau');
+      expect(result.consonantRatio).toBe(0); // 1 - 3/3 = 0
+    });
+
+    it('should handle word with no common bigrams', () => {
+      const result = computeDifficultyScore('kiwi');
+      expect(result.bigramRarity).toBeGreaterThan(0.5);
+    });
+
+    it('should produce scores that match spec weight distribution', () => {
+      // Verify weights sum to 1.0
+      const result = computeDifficultyScore('test');
+      const reconstructed =
+        result.letterRarity * 0.30 +
+        result.uniqueLetters * 0.20 +
+        result.wordFrequency * 0.15 +
+        result.consonantRatio * 0.15 +
+        result.length * 0.10 +
+        result.bigramRarity * 0.10;
+      expect(result.total).toBe(Math.round(reconstructed * 100));
+    });
+
+    it('should classify according to scoreThresholds', () => {
+      // easy: 0-38, normal: 39-64, hard: 65-100
+      const result = computeDifficultyScore('pomme');
+      if (result.total <= 38) expect(result.level).toBe('easy');
+      else if (result.total <= 64) expect(result.level).toBe('normal');
+      else expect(result.level).toBe('hard');
     });
   });
 });
@@ -828,6 +1008,15 @@ git commit -m "feat(difficulty): add composite difficulty score computation"
 ---
 
 ### Task 6: Create the generation script
+
+**DoD:**
+- `npm run generate:classifications` runs without error
+- Generated `src/lib/word-classifications.ts` compiles (`npm run typecheck`)
+- Generated file contains exactly 120 entries (one per word in `words.ts`)
+- Generated file contains a `SOURCE_HASH` for freshness validation
+- Each entry has: word, category, difficulty, letterCount, difficultyScore, breakdown
+- Console output shows distribution percentages
+- Script does NOT import from `@/` paths (uses relative imports only)
 
 **Files:**
 - Create: `scripts/generate-word-classifications.ts`
@@ -1003,6 +1192,12 @@ git commit -m "feat(difficulty): add word classification generation script"
 
 ### Task 7: Create the freshness check script
 
+**DoD:**
+- `npm run check:classifications` exits 0 when classifications are fresh
+- `npm run check:classifications` exits 1 with clear error message when stale
+- Hash covers all 4 source files: `words.ts`, `letter-frequencies.ts`, `bigram-frequencies.ts`, `word-frequencies.ts`
+- Error message tells the developer exactly what command to run
+
 **Files:**
 - Create: `scripts/check-word-classifications.ts`
 
@@ -1096,9 +1291,35 @@ git commit -m "feat(difficulty): add classification freshness check script"
 
 ---
 
+### Chunk 2 Quality Gate
+
+```bash
+npm run typecheck && npm run lint && npx vitest run && npm run build
+```
+
+**Additionally verify:**
+- [ ] `npm run generate:classifications` produces `src/lib/word-classifications.ts` with 120 entries
+- [ ] `npm run check:classifications` exits 0
+- [ ] Manually modify one word in `words.ts`, run `npm run check:classifications` — verify it exits 1 with clear message
+- [ ] Revert the manual modification
+- [ ] Distribution check: run generation and verify console output shows roughly 40/35/25 split. If distribution is far off (e.g., 80% easy), the scoreThresholds need adjustment before proceeding.
+
+**Distribution tolerance:** ±10% from targets is acceptable (i.e., easy 30-50%, normal 25-45%, hard 15-35%). If outside this range, adjust `scoreThresholds` in `difficulty-config.ts` and regenerate.
+
+---
+
 ## Chunk 3: Integration — Rewire words-difficulty.ts and Update Tests
 
 ### Task 8: Rewrite words-difficulty.ts and update tests (single commit)
+
+**DoD:**
+- `classifyWord()` is removed (no longer exported)
+- `CLASSIFIED_WORDS` comes from `word-classifications.ts` (generated data, no runtime computation)
+- `getScoreBreakdown()` is exported and returns a `DifficultyScoreBreakdown`
+- Public API signatures unchanged: `getWordsByDifficulty()`, `getRandomWordByDifficulty()`, `getDifficultyStats()`, `hasWordsForDifficulty()`
+- `grep -r "classifyWord" src/` returns nothing except the scorer module
+- Consumer test: `npx vitest run __tests__/lib/game-engine.test.ts` passes (exercises `getRandomWordByDifficulty`)
+- 20+ tests in `words-difficulty.test.ts`
 
 **Important:** Source file and tests MUST be committed together — the pre-commit hook runs all tests, so both must be updated simultaneously.
 
@@ -1502,9 +1723,30 @@ git commit -m "refactor(difficulty): rewire words-difficulty to composite scorin
 
 ---
 
+### Chunk 3 Quality Gate
+
+```bash
+npm run typecheck && npm run lint && npx vitest run && npm run build
+```
+
+**Additionally verify:**
+- [ ] `grep -r "classifyWord" src/` returns nothing (only in `difficulty-scorer.ts` and `word-classifications.ts` if at all)
+- [ ] `grep -r "wordLengthRange" src/ __tests__/` returns nothing
+- [ ] `npx vitest run __tests__/lib/game-engine.test.ts` passes (consumer smoke test)
+- [ ] `getScoreBreakdown('kiwi').total > getScoreBreakdown('pomme').total` is true (verify in a quick script or test)
+- [ ] Total test count > 140
+
+---
+
 ## Chunk 4: Pre-commit Hook and Final Validation
 
 ### Task 9: Update pre-commit hook
+
+**DoD:**
+- Hook triggers on changes to `words.ts`, `letter-frequencies.ts`, `bigram-frequencies.ts`, `word-frequencies.ts`
+- Hook does NOT trigger on unrelated file changes (no unnecessary slowdown)
+- Hook blocks commit with clear message when classifications are stale
+- Hook passes when classifications are fresh
 
 **Files:**
 - Modify: `.husky/pre-commit`
@@ -1537,6 +1779,17 @@ git commit -m "ci(hooks): add word classification freshness check to pre-commit"
 
 ### Task 10: Full validation
 
+**DoD — project-level acceptance criteria:**
+- [ ] `npm run validate` passes (typecheck + lint + tests)
+- [ ] `npm run build` passes (production build)
+- [ ] `npm run generate:classifications && npm run check:classifications` passes (idempotent generation)
+- [ ] Distribution within tolerance: easy 30-50%, normal 25-45%, hard 15-35%
+- [ ] All 3 game modes unaffected: solo, PvP, coop hooks still work (verified by test suite)
+- [ ] `getScoreBreakdown()` returns valid data for any word
+- [ ] Pre-commit hook correctly blocks when source data is stale
+- [ ] No `TODO`, `FIXME`, or `HACK` in any committed file
+- [ ] Total test count > 140 (was 108 at start)
+
 - [ ] **Step 1: Run full test suite**
 
 Run: `npm run validate`
@@ -1555,9 +1808,23 @@ Expected output shows distribution close to targets:
 - Normal: ~35% of words
 - Hard: ~25% of words
 
-If distribution is off, adjust `scoreThresholds` in `difficulty-config.ts` and regenerate.
+If distribution is outside tolerance (easy 30-50%, normal 25-45%, hard 15-35%), adjust `scoreThresholds` in `difficulty-config.ts` and regenerate. Then re-run all tests.
 
-- [ ] **Step 4: Final commit if any adjustments were made**
+- [ ] **Step 4: Verify no dead code or orphaned exports**
+
+Run:
+```bash
+grep -r "classifyWord" src/ __tests__/ | grep -v "difficulty-scorer" | grep -v "node_modules"
+grep -r "wordLengthRange" src/ __tests__/ | grep -v "node_modules"
+```
+Expected: Both return nothing.
+
+- [ ] **Step 5: Run E2E smoke test (if available)**
+
+Run: `npm run test:e2e -- --grep "difficulty"` (or the full E2E suite if no difficulty-specific test exists)
+Purpose: Verify the app starts and the game mode selection still works with the new scoring.
+
+- [ ] **Step 6: Final commit if any adjustments were made**
 
 ```bash
 git add -A
