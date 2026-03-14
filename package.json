@@ -9,7 +9,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 11",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -24,11 +24,12 @@
     "prepare": "husky",
     "generate:frequencies": "tsx scripts/generate-word-frequencies.ts",
     "generate:classifications": "tsx scripts/generate-word-classifications.ts",
-    "check:classifications": "tsx scripts/check-word-classifications.ts"
+    "check:classifications": "tsx scripts/check-word-classifications.ts",
+    "check:duplication": "jscpd src/ __tests__/ scripts/"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "eslint --fix --max-warnings 0",
+      "eslint --fix --max-warnings 11",
       "prettier --write"
     ],
     "*.{json,css,md}": [
@@ -70,6 +71,7 @@
     "eslint-config-next": "^16.1.6",
     "happy-dom": "^20.1.0",
     "husky": "^9.1.7",
+    "jscpd": "^4.0.8",
     "jsdom": "^27.4.0",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",

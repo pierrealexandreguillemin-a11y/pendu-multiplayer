@@ -1,0 +1,17 @@
+{
+  "threshold": 6,
+  "reporters": ["console"],
+  "ignore": [
+    "node_modules",
+    ".next",
+    "coverage",
+    "playwright-report",
+    "data",
+    "src/lib/word-classifications.ts"
+  ],
+  "absolute": true,
+  "gitignore": true,
+  "formats": ["typescript", "tsx"],
+  "minLines": 5,
+  "minTokens": 50
+}

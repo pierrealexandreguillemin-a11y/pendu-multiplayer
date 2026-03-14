@@ -20,4 +20,8 @@ npm run typecheck
 echo "Running tests..."
 npm run test:run
 
+# 4. Check for code duplication (DRY enforcement)
+echo "Checking for code duplication..."
+npm run check:duplication
+
 echo "Pre-commit checks passed!"
