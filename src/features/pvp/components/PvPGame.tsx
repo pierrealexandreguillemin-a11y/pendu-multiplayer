@@ -24,6 +24,66 @@ interface PvPGameProps {
   onShowLeaderboard: () => void;
 }
 
+interface GuesserTurnProps {
+  isMyTurn: boolean;
+  currentGuesserName: string | null;
+}
+
+function GuesserTurnIndicator({ isMyTurn, currentGuesserName }: GuesserTurnProps) {
+  const text = isMyTurn ? "C'est ton tour !" : `Tour de ${currentGuesserName ?? '...'}`;
+  const className = isMyTurn ? 'bg-pink-500/20 text-pink-400' : 'bg-white/5 text-gray-400';
+  return (
+    <div className={`text-center py-2 rounded-lg mb-3 text-sm ${className}`} aria-live="polite">
+      {text}
+    </div>
+  );
+}
+
+function HostTurnIndicator({ name }: { name: string }) {
+  return (
+    <div
+      className="text-center py-2 rounded-lg mb-3 text-sm bg-white/5 text-gray-400"
+      aria-live="polite"
+    >
+      Tour de {name}
+    </div>
+  );
+}
+
+interface PvPGameStatusProps {
+  gameState: GameState;
+  isHost: boolean;
+  wordScore: number;
+  sessionScore: number;
+  onContinue: () => void;
+  onQuit: () => void;
+  onShowLeaderboard: () => void;
+}
+
+function PvPGameStatus({
+  gameState,
+  isHost,
+  wordScore,
+  sessionScore,
+  onContinue,
+  onQuit,
+  onShowLeaderboard,
+}: PvPGameStatusProps) {
+  return (
+    <GameStatus
+      status={gameState.status}
+      errors={gameState.errors}
+      maxErrors={gameState.maxErrors}
+      category={gameState.category}
+      score={isHost ? 0 : wordScore}
+      sessionScore={isHost ? undefined : sessionScore}
+      onPlayAgain={isHost ? onContinue : undefined}
+      onBackToMenu={onQuit}
+      onShowLeaderboard={onShowLeaderboard}
+    />
+  );
+}
+
 export function PvPGame({
   gameState,
   displayWord,
@@ -70,37 +130,21 @@ export function PvPGame({
         </div>
       )}
 
-      {/* Turn indicator for guessers */}
       {!isGameOver && !isHost && (
-        <div
-          className={`text-center py-2 rounded-lg mb-3 text-sm ${
-            isMyTurn ? 'bg-pink-500/20 text-pink-400' : 'bg-white/5 text-gray-400'
-          }`}
-          aria-live="polite"
-        >
-          {isMyTurn ? "C'est ton tour !" : `Tour de ${currentGuesserName ?? '...'}`}
-        </div>
+        <GuesserTurnIndicator isMyTurn={isMyTurn} currentGuesserName={currentGuesserName} />
       )}
 
-      {/* Host sees who's guessing */}
       {!isGameOver && isHost && currentGuesserName && (
-        <div
-          className="text-center py-2 rounded-lg mb-3 text-sm bg-white/5 text-gray-400"
-          aria-live="polite"
-        >
-          Tour de {currentGuesserName}
-        </div>
+        <HostTurnIndicator name={currentGuesserName} />
       )}
 
-      <GameStatus
-        status={gameState.status}
-        errors={gameState.errors}
-        maxErrors={gameState.maxErrors}
-        category={gameState.category}
-        score={isHost ? 0 : wordScore}
-        sessionScore={isHost ? undefined : sessionScore}
-        onPlayAgain={isHost ? onContinue : undefined}
-        onBackToMenu={onQuit}
+      <PvPGameStatus
+        gameState={gameState}
+        isHost={isHost}
+        wordScore={wordScore}
+        sessionScore={sessionScore}
+        onContinue={onContinue}
+        onQuit={onQuit}
         onShowLeaderboard={onShowLeaderboard}
       />
 

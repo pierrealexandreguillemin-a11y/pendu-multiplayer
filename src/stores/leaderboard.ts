@@ -89,6 +89,31 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
+function sortEntries(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+  return [...entries].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return a.errors - b.errors;
+  });
+}
+
+async function syncAllModes(
+  modes: GameMode[],
+  currentEntries: LeaderboardState['entries']
+): Promise<LeaderboardState['entries']> {
+  const results = await Promise.all(
+    modes.map(async (mode) => {
+      const merged = await syncWithCloud(mode, currentEntries[mode]);
+      return { mode, entries: merged };
+    })
+  );
+
+  const newEntries = { ...currentEntries };
+  for (const result of results) {
+    newEntries[result.mode] = result.entries;
+  }
+  return newEntries;
+}
+
 export const useLeaderboardStore = create<LeaderboardState>()(
   persist(
     (set, get) => ({
@@ -109,16 +134,7 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
         set((state) => {
           const modeEntries = [...state.entries[entry.mode], entry];
-
-          // Sort by score descending, then by errors ascending (fewer errors = better)
-          modeEntries.sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return a.errors - b.errors;
-          });
-
-          // Keep only top entries
-          const trimmedEntries = modeEntries.slice(0, MAX_ENTRIES_PER_MODE);
-
+          const trimmedEntries = sortEntries(modeEntries).slice(0, MAX_ENTRIES_PER_MODE);
           return {
             entries: {
               ...state.entries,
@@ -127,7 +143,6 @@ export const useLeaderboardStore = create<LeaderboardState>()(
           };
         });
 
-        // Async cloud sync (fire and forget)
         if (get().isCloudEnabled) {
           submitCloudScore(entry.mode, entry).catch((err) => {
             console.warn('[Leaderboard] Cloud sync failed:', err);
@@ -160,18 +175,12 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
       syncWithCloud: async (mode) => {
         if (!get().isCloudEnabled) return;
-
         set({ cloudStatus: 'syncing' });
-
         try {
           const localEntries = get().entries[mode];
           const mergedEntries = await syncWithCloud(mode, localEntries);
-
           set((state) => ({
-            entries: {
-              ...state.entries,
-              [mode]: mergedEntries,
-            },
+            entries: { ...state.entries, [mode]: mergedEntries },
             cloudStatus: 'success',
           }));
         } catch (error) {
@@ -182,29 +191,11 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
       syncAllWithCloud: async () => {
         if (!get().isCloudEnabled) return;
-
         set({ cloudStatus: 'syncing' });
-
         try {
           const modes: GameMode[] = ['solo', 'coop', 'pvp'];
-          const state = get();
-
-          const results = await Promise.all(
-            modes.map(async (mode) => {
-              const merged = await syncWithCloud(mode, state.entries[mode]);
-              return { mode, entries: merged };
-            })
-          );
-
-          const newEntries = { ...state.entries };
-          for (const result of results) {
-            newEntries[result.mode] = result.entries;
-          }
-
-          set({
-            entries: newEntries,
-            cloudStatus: 'success',
-          });
+          const newEntries = await syncAllModes(modes, get().entries);
+          set({ entries: newEntries, cloudStatus: 'success' });
         } catch (error) {
           console.error('[Leaderboard] Cloud sync all error:', error);
           set({ cloudStatus: 'error' });
@@ -213,7 +204,6 @@ export const useLeaderboardStore = create<LeaderboardState>()(
 
       fetchCloudScores: async (mode) => {
         if (!get().isCloudEnabled) return [];
-
         try {
           return await fetchCloudLeaderboard(mode);
         } catch (error) {

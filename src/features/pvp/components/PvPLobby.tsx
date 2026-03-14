@@ -18,6 +18,24 @@ interface PvPLobbyProps {
   onJoinRoom: () => void;
 }
 
+function ConnectingLabel() {
+  return (
+    <span className="flex items-center gap-2">
+      <Spinner className="text-white" />
+      Connexion...
+    </span>
+  );
+}
+
+function ConnectingLabelOutline() {
+  return (
+    <span className="flex items-center gap-2">
+      <Spinner />
+      Connexion...
+    </span>
+  );
+}
+
 export function PvPLobby({
   playerName,
   joinId,
@@ -68,14 +86,7 @@ export function PvPLobby({
               className="w-full bg-pink-700 hover:bg-pink-800 hover:shadow-lg hover:shadow-pink-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               size="lg"
             >
-              {isConnecting ? (
-                <span className="flex items-center gap-2">
-                  <Spinner className="text-white" />
-                  Connexion...
-                </span>
-              ) : (
-                'Je choisis le mot'
-              )}
+              {isConnecting ? <ConnectingLabel /> : 'Je choisis le mot'}
             </Button>
 
             <div className="flex items-center gap-2">
@@ -104,14 +115,7 @@ export function PvPLobby({
               className="w-full disabled:opacity-50 disabled:cursor-not-allowed"
               size="lg"
             >
-              {isConnecting ? (
-                <span className="flex items-center gap-2">
-                  <Spinner />
-                  Connexion...
-                </span>
-              ) : (
-                'Je devine'
-              )}
+              {isConnecting ? <ConnectingLabelOutline /> : 'Je devine'}
             </Button>
           </div>
 
