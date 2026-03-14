@@ -16,6 +16,9 @@ import { getLetterRarityScore } from './letter-frequencies';
 import { isBigramCommon } from './bigram-frequencies';
 import { getWordFrequencyScore } from './word-frequencies';
 import { DIFFICULTY_CONFIGS } from './difficulty-config';
+import { normalizeWord as _normalizeWord } from './normalize';
+
+export { normalizeWord } from './normalize';
 
 const WEIGHTS = {
   letterRarity: 0.3,
@@ -30,16 +33,8 @@ const VOWELS = new Set(['A', 'E', 'I', 'O', 'U']);
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 15;
 
-export function normalizeWord(word: string): string {
-  return word
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^A-Za-z]/g, '')
-    .toUpperCase();
-}
-
 export function computeDifficultyScore(word: string): DifficultyScoreBreakdown {
-  const normalized = normalizeWord(word);
+  const normalized = _normalizeWord(word);
   const letters = [...normalized];
   const wordLength = letters.length;
   const uniqueLettersSet = new Set(letters);
@@ -84,9 +79,9 @@ export function computeDifficultyScore(word: string): DifficultyScoreBreakdown {
   const total = Math.round(rawScore * 100);
 
   let level: DifficultyLevel = 'hard';
-  if (total <= DIFFICULTY_CONFIGS.easy.scoreThresholds) {
+  if (total <= DIFFICULTY_CONFIGS.easy.scoreThreshold) {
     level = 'easy';
-  } else if (total <= DIFFICULTY_CONFIGS.normal.scoreThresholds) {
+  } else if (total <= DIFFICULTY_CONFIGS.normal.scoreThreshold) {
     level = 'normal';
   }
 

@@ -5,10 +5,9 @@
  * Zero computation at runtime.
  */
 
-import type { DifficultyLevel, DifficultyScoreBreakdown } from '@/types/difficulty';
+import type { DifficultyLevel } from '@/types/difficulty';
 import type { WordEntry } from './words';
 import { WORD_CLASSIFICATIONS, type ClassifiedWordEntry } from './word-classifications';
-import { computeDifficultyScore } from './difficulty-scorer';
 
 export interface ClassifiedWord extends WordEntry {
   difficulty: DifficultyLevel;
@@ -46,35 +45,22 @@ export function getDifficultyStats(): Record<
   DifficultyLevel,
   { count: number; avgLength: number; examples: string[] }
 > {
-  const stats: Record<DifficultyLevel, { count: number; totalLength: number; words: string[] }> = {
-    easy: { count: 0, totalLength: 0, words: [] },
-    normal: { count: 0, totalLength: 0, words: [] },
-    hard: { count: 0, totalLength: 0, words: [] },
-  };
-  for (const word of CLASSIFIED_WORDS) {
-    const stat = stats[word.difficulty];
-    stat.count++;
-    stat.totalLength += word.letterCount;
-    if (stat.words.length < 3) stat.words.push(word.word);
-  }
-  return {
-    easy: {
-      count: stats.easy.count,
-      avgLength: stats.easy.count > 0 ? Math.round(stats.easy.totalLength / stats.easy.count) : 0,
-      examples: stats.easy.words,
-    },
-    normal: {
-      count: stats.normal.count,
-      avgLength:
-        stats.normal.count > 0 ? Math.round(stats.normal.totalLength / stats.normal.count) : 0,
-      examples: stats.normal.words,
-    },
-    hard: {
-      count: stats.hard.count,
-      avgLength: stats.hard.count > 0 ? Math.round(stats.hard.totalLength / stats.hard.count) : 0,
-      examples: stats.hard.words,
-    },
-  };
+  const levels: DifficultyLevel[] = ['easy', 'normal', 'hard'];
+  const stats = Object.fromEntries(
+    levels.map((level) => {
+      const words = getWordsByDifficulty(level);
+      const totalLength = words.reduce((sum, w) => sum + w.letterCount, 0);
+      return [
+        level,
+        {
+          count: words.length,
+          avgLength: words.length > 0 ? Math.round(totalLength / words.length) : 0,
+          examples: words.slice(0, 3).map((w) => w.word),
+        },
+      ];
+    })
+  ) as Record<DifficultyLevel, { count: number; avgLength: number; examples: string[] }>;
+  return stats;
 }
 
 export function hasWordsForDifficulty(
@@ -84,8 +70,4 @@ export function hasWordsForDifficulty(
   const candidates = getWordsByDifficulty(difficulty);
   if (!usedWords || usedWords.size === 0) return candidates.length > 0;
   return candidates.some((w) => !usedWords.has(w.word.toUpperCase()));
-}
-
-export function getScoreBreakdown(word: string): DifficultyScoreBreakdown {
-  return computeDifficultyScore(word);
 }

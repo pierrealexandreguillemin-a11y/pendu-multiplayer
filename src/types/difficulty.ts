@@ -25,7 +25,7 @@ export interface DifficultyConfig {
   showCategory: boolean;
 
   /** Score threshold — words with score ≤ this value belong to this level */
-  scoreThresholds: number;
+  scoreThreshold: number;
 
   /** Score multiplier for rankings */
   scoreMultiplier: number;

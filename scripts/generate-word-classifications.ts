@@ -18,21 +18,13 @@ interface WordClassification {
   category: string;
   difficulty: string;
   letterCount: number;
-  difficultyScore: number;
-  breakdown: {
-    letterRarity: number;
-    uniqueLetters: number;
-    wordFrequency: number;
-    consonantRatio: number;
-    length: number;
-    bigramRarity: number;
-  };
 }
 
 async function main() {
   // Dynamic imports
   const { WORDS } = await import('../src/lib/words');
-  const { computeDifficultyScore, normalizeWord } = await import('../src/lib/difficulty-scorer');
+  const { computeDifficultyScore } = await import('../src/lib/difficulty-scorer');
+  const { normalizeWord } = await import('../src/lib/normalize');
 
   const classifications: WordClassification[] = WORDS.map(
     (entry: { word: string; category: string }) => {
@@ -43,15 +35,6 @@ async function main() {
         category: entry.category,
         difficulty: score.level,
         letterCount: normalized.length,
-        difficultyScore: score.total,
-        breakdown: {
-          letterRarity: Math.round(score.letterRarity * 1000) / 1000,
-          uniqueLetters: Math.round(score.uniqueLetters * 1000) / 1000,
-          wordFrequency: Math.round(score.wordFrequency * 1000) / 1000,
-          consonantRatio: Math.round(score.consonantRatio * 1000) / 1000,
-          length: Math.round(score.length * 1000) / 1000,
-          bigramRarity: Math.round(score.bigramRarity * 1000) / 1000,
-        },
       };
     }
   );
@@ -75,7 +58,7 @@ async function main() {
  * Total words: ${total}
  */
 
-import type { DifficultyLevel, DifficultyScoreBreakdown } from '@/types/difficulty';
+import type { DifficultyLevel } from '@/types/difficulty';
 
 /** Source hash for freshness validation */
 export const SOURCE_HASH = '${sourceHash}';
@@ -86,8 +69,6 @@ export interface ClassifiedWordEntry {
   category: string;
   difficulty: DifficultyLevel;
   letterCount: number;
-  difficultyScore: number;
-  breakdown: Omit<DifficultyScoreBreakdown, 'total' | 'level'>;
 }
 
 /** Pre-computed word classifications */

@@ -10,17 +10,13 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { normalizeForLookup } from '../src/lib/normalize';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const CSV_PATH = path.join(PROJECT_ROOT, 'data/lexique3-top10k.csv');
 const OUTPUT_PATH = path.join(PROJECT_ROOT, 'src/lib/word-frequencies.ts');
 
-function normalize(word: string): string {
-  return word
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
+const normalize = normalizeForLookup;
 
 function main() {
   // 1. Read CSV

@@ -8,6 +8,8 @@
  * Maps French words to a frequency score (0 = very common, 1 = very rare).
  */
 
+import { normalizeForLookup } from './normalize';
+
 const DEFAULT_UNKNOWN_SCORE = 0.8;
 
 /** Word frequency scores: normalized word → score (0-1) */
@@ -139,9 +141,6 @@ export const WORD_FREQUENCY_SCORES: ReadonlyMap<string, number> = new Map([
  * Case-insensitive, accent-insensitive lookup.
  */
 export function getWordFrequencyScore(word: string): number {
-  const normalized = word
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+  const normalized = normalizeForLookup(word);
   return WORD_FREQUENCY_SCORES.get(normalized) ?? DEFAULT_UNKNOWN_SCORE;
 }

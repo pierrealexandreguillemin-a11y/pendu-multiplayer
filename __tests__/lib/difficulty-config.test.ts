@@ -39,29 +39,29 @@ describe('difficulty-config', () => {
       );
     });
 
-    it('should have valid scoreThresholds for each level', () => {
+    it('should have valid scoreThreshold for each level', () => {
       const levels: DifficultyLevel[] = ['easy', 'normal', 'hard'];
 
       for (const level of levels) {
         const config = DIFFICULTY_CONFIGS[level];
-        expect(typeof config.scoreThresholds).toBe('number');
-        expect(config.scoreThresholds).toBeGreaterThan(0);
+        expect(typeof config.scoreThreshold).toBe('number');
+        expect(config.scoreThreshold).toBeGreaterThan(0);
       }
     });
 
-    it('should have increasing scoreThresholds as difficulty increases', () => {
-      expect(DIFFICULTY_CONFIGS.easy.scoreThresholds).toBeLessThan(
-        DIFFICULTY_CONFIGS.normal.scoreThresholds
+    it('should have increasing scoreThreshold as difficulty increases', () => {
+      expect(DIFFICULTY_CONFIGS.easy.scoreThreshold).toBeLessThan(
+        DIFFICULTY_CONFIGS.normal.scoreThreshold
       );
-      expect(DIFFICULTY_CONFIGS.normal.scoreThresholds).toBeLessThan(
-        DIFFICULTY_CONFIGS.hard.scoreThresholds
+      expect(DIFFICULTY_CONFIGS.normal.scoreThreshold).toBeLessThan(
+        DIFFICULTY_CONFIGS.hard.scoreThreshold
       );
     });
 
-    it('should have correct scoreThresholds values', () => {
-      expect(DIFFICULTY_CONFIGS.easy.scoreThresholds).toBe(47);
-      expect(DIFFICULTY_CONFIGS.normal.scoreThresholds).toBe(54);
-      expect(DIFFICULTY_CONFIGS.hard.scoreThresholds).toBe(100);
+    it('should have correct scoreThreshold values', () => {
+      expect(DIFFICULTY_CONFIGS.easy.scoreThreshold).toBe(47);
+      expect(DIFFICULTY_CONFIGS.normal.scoreThreshold).toBe(54);
+      expect(DIFFICULTY_CONFIGS.hard.scoreThreshold).toBe(100);
     });
 
     it('should have French labels', () => {
@@ -90,7 +90,7 @@ describe('difficulty-config', () => {
       expect(config).toHaveProperty('level');
       expect(config).toHaveProperty('maxErrors');
       expect(config).toHaveProperty('showCategory');
-      expect(config).toHaveProperty('scoreThresholds');
+      expect(config).toHaveProperty('scoreThreshold');
       expect(config).toHaveProperty('scoreMultiplier');
       expect(config).toHaveProperty('label');
       expect(config).toHaveProperty('description');

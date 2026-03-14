@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import { normalizeWord } from '@/lib/normalize';
 import {
   CLASSIFIED_WORDS,
   getWordsByDifficulty,
   getRandomWordByDifficulty,
   getDifficultyStats,
   hasWordsForDifficulty,
-  getScoreBreakdown,
 } from '@/lib/words-difficulty';
+import { computeDifficultyScore } from '@/lib/difficulty-scorer';
 import type { DifficultyLevel } from '@/types/difficulty';
 
 describe('words-difficulty', () => {
@@ -24,10 +25,7 @@ describe('words-difficulty', () => {
 
     it('should have consistent letterCount', () => {
       for (const word of CLASSIFIED_WORDS.slice(0, 20)) {
-        const expectedCount = word.word
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^A-Za-z]/g, '').length;
+        const expectedCount = normalizeWord(word.word).length;
         expect(word.letterCount).toBe(expectedCount);
       }
     });
@@ -149,9 +147,9 @@ describe('words-difficulty', () => {
     });
   });
 
-  describe('getScoreBreakdown', () => {
+  describe('computeDifficultyScore (via difficulty-scorer)', () => {
     it('should return breakdown with all criteria', () => {
-      const b = getScoreBreakdown('pomme');
+      const b = computeDifficultyScore('pomme');
       expect(b.letterRarity).toBeGreaterThanOrEqual(0);
       expect(b.letterRarity).toBeLessThanOrEqual(1);
       expect(b.uniqueLetters).toBeGreaterThanOrEqual(0);
@@ -170,7 +168,9 @@ describe('words-difficulty', () => {
     });
 
     it('should score kiwi harder than pomme', () => {
-      expect(getScoreBreakdown('kiwi').total).toBeGreaterThan(getScoreBreakdown('pomme').total);
+      expect(computeDifficultyScore('kiwi').total).toBeGreaterThan(
+        computeDifficultyScore('pomme').total
+      );
     });
   });
 });
