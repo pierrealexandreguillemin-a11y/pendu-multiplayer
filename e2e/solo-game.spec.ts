@@ -13,6 +13,7 @@ test.describe('Solo Full Game', () => {
   });
 
   test('should play through a complete game until victory or defeat', async ({ page }) => {
+    test.slow();
     // Step 1: Enter name and start
     await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
@@ -29,7 +30,34 @@ test.describe('Solo Full Game', () => {
     await expect(page.getByText(/essais restants/i)).toBeVisible();
 
     // Step 5: Play all vowels then consonants until game ends
-    const letters = ['E', 'A', 'I', 'O', 'U', 'S', 'T', 'R', 'N', 'L', 'D', 'C', 'P', 'M'];
+    const letters = [
+      'E',
+      'A',
+      'I',
+      'O',
+      'U',
+      'S',
+      'T',
+      'R',
+      'N',
+      'L',
+      'D',
+      'C',
+      'P',
+      'M',
+      'B',
+      'G',
+      'F',
+      'H',
+      'V',
+      'J',
+      'K',
+      'W',
+      'X',
+      'Y',
+      'Z',
+      'Q',
+    ];
 
     for (const letter of letters) {
       // Check if game is still playing (no victory/defeat screen)
