@@ -11,7 +11,7 @@ import * as crypto from 'node:crypto';
 
 /** Files that affect the generated word-frequencies.ts and word-classifications.ts */
 export const SOURCE_FILES = [
-  'src/lib/words.ts',
+  'data/words.csv',
   'src/lib/letter-frequencies.ts',
   'src/lib/bigram-frequencies.ts',
   'src/lib/word-frequencies.ts',
