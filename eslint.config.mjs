@@ -17,23 +17,18 @@ const eslintConfig = defineConfig([
     'playwright-report/**',
   ]),
   // Code quality: complexity, SRP, maintainability
-  // Thresholds set to current baseline — tighten progressively
+  // All thresholds enforced as errors — zero tolerance
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/lib/word-classifications.ts'],
     rules: {
-      // Complexity — max cyclomatic complexity per function
-      complexity: ['warn', { max: 15 }],
-      // SRP proxy — max lines per file
-      'max-lines': ['warn', { max: 400, skipBlankLines: true, skipComments: true }],
-      // Readability — max lines per function
+      complexity: ['error', { max: 15 }],
+      'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': [
-        'warn',
+        'error',
         { max: 100, skipBlankLines: true, skipComments: true },
       ],
-      // Nesting depth — prevents deeply nested logic
       'max-depth': ['error', { max: 4 }],
-      // Max params — too many params = poor API design
       'max-params': ['error', { max: 4 }],
     },
   },
