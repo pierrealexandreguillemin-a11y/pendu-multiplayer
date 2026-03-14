@@ -9,6 +9,7 @@ import type { Letter } from '@/types/game';
 import type { PvPPhase } from './usePvPSession';
 import type { PvPPlayer } from './usePvPRoom';
 import { usePvPSessionActions } from './usePvPSessionActions';
+import { useMultiplayerCallbacks } from '@/features/multiplayer';
 
 export interface PvPCallbacksOptions {
   playerName: string;
@@ -51,23 +52,17 @@ export function usePvPCallbacks(opts: PvPCallbacksOptions) {
     hasRecordedRef,
   } = opts;
 
-  const createRoom = useCallback(async () => {
-    if (!playerName.trim()) return;
-    const peerId = await peer.createRoom();
-    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
-    setCurrentTurnIndex(0);
-    setPhase('waiting');
-  }, [playerName, peer, setPlayers, setCurrentTurnIndex, setPhase]);
-
-  const joinRoom = useCallback(async () => {
-    if (!playerName.trim() || !joinId.trim()) return;
-    const myPeerId = await peer.joinRoom(joinId.trim());
-    peer.sendMessage({
-      type: 'player_join',
-      payload: { playerId: myPeerId, playerName: playerName.trim() },
-    });
-    setPhase('waiting');
-  }, [playerName, joinId, peer, setPhase]);
+  const { createRoom, joinRoom } = useMultiplayerCallbacks({
+    playerName,
+    joinId,
+    peer,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase: setPhase as (phase: string) => void,
+    setSessionScore,
+    setWordsWon,
+    startBroadcastSentRef,
+  });
 
   const goToWordInput = useCallback(() => setPhase('word-input'), [setPhase]);
   const goBackToWaiting = useCallback(() => setPhase('waiting'), [setPhase]);

@@ -1,15 +1,16 @@
 /**
- * PvP Effects Hook - Side effects for PvP session (message handling, leaderboard)
+ * PvP Effects Hook - Delegates to shared multiplayer effects.
  */
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import type { LeaderboardEntry } from '@/types/game';
 import type { PvPPhase } from './usePvPSession';
 import type { PvPPlayer } from './usePvPRoom';
-import type { PvPRefs, PvPActions } from './usePvPMessageHandler';
-import { buildPvPMessageHandler } from './usePvPMessageHandler';
+import type { PvPRefs } from './usePvPMessageHandler';
+import { useMultiplayerEffects } from '@/features/multiplayer';
+import type { MessageHandlerOverrides } from '@/features/multiplayer';
 
 type AddEntryFn = (entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>) => void;
 
@@ -31,78 +32,23 @@ export interface PvPEffectsOptions {
   addEntry: AddEntryFn;
 }
 
+const PVP_MESSAGE_OVERRIDES: MessageHandlerOverrides = {
+  logPrefix: 'PvP',
+  onRestart: (_refs, actions) => {
+    if (!actions.isHost) actions.setPhase('waiting');
+  },
+  turnChangeRequiresNonHost: true,
+};
+
 export function usePvPEffects(opts: PvPEffectsOptions) {
-  const {
-    peer,
-    game,
-    phase,
-    setPhase,
-    playerName,
-    sessionScore,
-    wordsWon,
-    hasRecordedRef,
-    startBroadcastSentRef,
-    refs,
-    setPlayers,
-    setCurrentTurnIndex,
-    advanceTurn,
-    broadcastPlayersUpdate,
-    addEntry,
-  } = opts;
+  const messageOverrides = useMemo(() => PVP_MESSAGE_OVERRIDES, []);
 
-  useEffect(() => {
-    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
-      peer.sendMessage({
-        type: 'start',
-        payload: { word: game.gameState.word, category: game.gameState.category ?? 'PvP' },
-      });
-      startBroadcastSentRef.current = true;
-    }
-  }, [peer, game.gameState, phase, startBroadcastSentRef]);
-
-  useEffect(() => {
-    if (
-      game.gameState?.status === 'lost' &&
-      !peer.isHost &&
-      playerName &&
-      !hasRecordedRef.current
-    ) {
-      hasRecordedRef.current = true;
-      addEntry({
-        playerName,
-        mode: 'pvp',
-        score: sessionScore,
-        word: `${wordsWon} mots`,
-        errors: game.gameState.errors,
-        maxErrors: game.gameState.maxErrors,
-        won: false,
-      });
-    }
-  }, [
-    game.gameState?.status,
-    game.gameState?.errors,
-    game.gameState?.maxErrors,
-    peer.isHost,
-    playerName,
-    sessionScore,
-    wordsWon,
-    addEntry,
-    hasRecordedRef,
-  ]);
-
-  useEffect(() => {
-    const actions: PvPActions = {
-      isHost: peer.isHost,
-      sendMessage: peer.sendMessage,
-      setPhase,
-      setPlayers,
-      setCurrentTurnIndex,
-      advanceTurn,
-      broadcastPlayersUpdate,
-    };
-    peer.onMessage(buildPvPMessageHandler(refs, actions));
-    return () => {
-      peer.offMessage();
-    };
-  }, [peer, setPhase, setPlayers, setCurrentTurnIndex, advanceTurn, broadcastPlayersUpdate, refs]);
+  useMultiplayerEffects({
+    ...opts,
+    setPhase: opts.setPhase as (phase: string) => void,
+    messageOverrides,
+    defaultCategory: 'PvP',
+    leaderboardMode: 'pvp',
+    recordOnlyNonHost: true,
+  });
 }

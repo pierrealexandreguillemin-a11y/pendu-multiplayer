@@ -1,15 +1,16 @@
 /**
- * Coop Effects Hook - Side effects for Coop session (message handling, leaderboard)
+ * Coop Effects Hook - Delegates to shared multiplayer effects.
  */
 
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import type { LeaderboardEntry } from '@/types/game';
 import type { CoopPhase } from './useCoopSession';
 import type { CoopPlayer } from './useCoopRoom';
-import type { CoopRefs, CoopActions } from './useCoopMessageHandler';
-import { buildCoopMessageHandler } from './useCoopMessageHandler';
+import type { CoopRefs } from './useCoopMessageHandler';
+import { useMultiplayerEffects } from '@/features/multiplayer';
+import type { MessageHandlerOverrides } from '@/features/multiplayer';
 
 type AddEntryFn = (entry: Omit<LeaderboardEntry, 'id' | 'timestamp'>) => void;
 
@@ -31,72 +32,24 @@ export interface CoopEffectsOptions {
   addEntry: AddEntryFn;
 }
 
+const COOP_MESSAGE_OVERRIDES: MessageHandlerOverrides = {
+  logPrefix: 'Coop',
+  onRestart: (refs, actions) => {
+    refs.gameRef.current.startGame();
+    actions.setPhase('playing');
+  },
+  turnChangeRequiresNonHost: false,
+};
+
 export function useCoopEffects(opts: CoopEffectsOptions) {
-  const {
-    peer,
-    game,
-    phase,
-    setPhase,
-    playerName,
-    sessionScore,
-    wordsWon,
-    hasRecordedRef,
-    startBroadcastSentRef,
-    refs,
-    setPlayers,
-    setCurrentTurnIndex,
-    advanceTurn,
-    broadcastPlayersUpdate,
-    addEntry,
-  } = opts;
+  const messageOverrides = useMemo(() => COOP_MESSAGE_OVERRIDES, []);
 
-  useEffect(() => {
-    if (!startBroadcastSentRef.current && peer.isHost && game.gameState && phase === 'playing') {
-      peer.sendMessage({
-        type: 'start',
-        payload: { word: game.gameState.word, category: game.gameState.category ?? '' },
-      });
-      startBroadcastSentRef.current = true;
-    }
-  }, [peer, game.gameState, phase, startBroadcastSentRef]);
-
-  useEffect(() => {
-    if (game.gameState?.status === 'lost' && playerName && !hasRecordedRef.current) {
-      hasRecordedRef.current = true;
-      addEntry({
-        playerName,
-        mode: 'coop',
-        score: sessionScore,
-        word: `${wordsWon} mots`,
-        errors: game.gameState.errors,
-        maxErrors: game.gameState.maxErrors,
-        won: false,
-      });
-    }
-  }, [
-    game.gameState?.status,
-    game.gameState?.errors,
-    game.gameState?.maxErrors,
-    playerName,
-    sessionScore,
-    wordsWon,
-    addEntry,
-    hasRecordedRef,
-  ]);
-
-  useEffect(() => {
-    const actions: CoopActions = {
-      isHost: peer.isHost,
-      sendMessage: peer.sendMessage,
-      setPhase,
-      setPlayers,
-      setCurrentTurnIndex,
-      advanceTurn,
-      broadcastPlayersUpdate,
-    };
-    peer.onMessage(buildCoopMessageHandler(refs, actions));
-    return () => {
-      peer.offMessage();
-    };
-  }, [peer, setPhase, setPlayers, setCurrentTurnIndex, advanceTurn, broadcastPlayersUpdate, refs]);
+  useMultiplayerEffects({
+    ...opts,
+    setPhase: opts.setPhase as (phase: string) => void,
+    messageOverrides,
+    defaultCategory: '',
+    leaderboardMode: 'coop',
+    recordOnlyNonHost: false,
+  });
 }

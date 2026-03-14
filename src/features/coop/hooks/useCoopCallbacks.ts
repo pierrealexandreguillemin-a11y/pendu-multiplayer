@@ -10,6 +10,7 @@ import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import type { Letter } from '@/types/game';
 import type { CoopPhase } from './useCoopSession';
 import type { CoopPlayer } from './useCoopRoom';
+import { useMultiplayerCallbacks } from '@/features/multiplayer';
 
 export interface CoopCallbacksOptions {
   playerName: string;
@@ -46,23 +47,17 @@ export function useCoopCallbacks(opts: CoopCallbacksOptions) {
     advanceTurn,
   } = opts;
 
-  const createRoom = useCallback(async () => {
-    if (!playerName.trim()) return;
-    const peerId = await peer.createRoom();
-    setPlayers([{ id: peerId, name: playerName.trim(), isHost: true, isReady: true, score: 0 }]);
-    setCurrentTurnIndex(0);
-    setPhase('waiting');
-  }, [playerName, peer, setPlayers, setCurrentTurnIndex, setPhase]);
-
-  const joinRoom = useCallback(async () => {
-    if (!playerName.trim() || !joinId.trim()) return;
-    const myPeerId = await peer.joinRoom(joinId.trim());
-    peer.sendMessage({
-      type: 'player_join',
-      payload: { playerId: myPeerId, playerName: playerName.trim() },
-    });
-    setPhase('waiting');
-  }, [playerName, joinId, peer, setPhase]);
+  const { createRoom, joinRoom, endSession } = useMultiplayerCallbacks({
+    playerName,
+    joinId,
+    peer,
+    setPlayers,
+    setCurrentTurnIndex,
+    setPhase: setPhase as (phase: string) => void,
+    setSessionScore,
+    setWordsWon,
+    startBroadcastSentRef,
+  });
 
   const startGame = useCallback(() => {
     hasRecordedRef.current = false;
@@ -97,24 +92,6 @@ export function useCoopCallbacks(opts: CoopCallbacksOptions) {
     },
     [game, peer, isMyTurn, phase, advanceTurn]
   );
-
-  const endSession = useCallback(() => {
-    peer.disconnect();
-    setPhase('lobby');
-    setPlayers([]);
-    setCurrentTurnIndex(0);
-    setSessionScore(0);
-    setWordsWon(0);
-    startBroadcastSentRef.current = false;
-  }, [
-    peer,
-    setPlayers,
-    setCurrentTurnIndex,
-    setPhase,
-    setSessionScore,
-    setWordsWon,
-    startBroadcastSentRef,
-  ]);
 
   return { createRoom, joinRoom, startGame, continueSession, handleGuess, endSession };
 }
