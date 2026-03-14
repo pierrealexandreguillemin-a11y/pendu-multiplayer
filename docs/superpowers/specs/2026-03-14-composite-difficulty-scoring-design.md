@@ -1,6 +1,6 @@
 ---
 title: Score composite de difficulté — Standards de l'industrie
-version: 1.5
+version: 2.0
 date: 2026-03-14
 status: approved
 llm-context: >
@@ -174,84 +174,72 @@ Lettres uniques : V, E, T, R, I, N, A (7 sur 11). Voyelles : E, E, I, A, I, E (6
 
 | Fichier | Rôle |
 |---------|------|
-| `src/lib/letter-frequencies.ts` | Table statique des scores de rareté par lettre (A-Z), ~30 lignes |
-| `src/lib/bigram-frequencies.ts` | Table statique des ~35 bigrammes FR les plus courants, ~40 lignes |
-| `src/lib/word-classifications.ts` | **Généré** — score composite, niveau et breakdown par mot. Zéro computation au runtime |
-| `scripts/generate-word-classifications.ts` | Script de génération : lit `words.ts` + Lexique 3 → calcule les 6 critères → génère `word-classifications.ts` |
-| `data/lexique3-top10k.csv` | Fichier de référence : top 10k mots FR par fréquence (~50KB), commité dans le repo |
+| `src/lib/normalize.ts` | Normalisation partagée : `stripAccents()`, `normalizeWord()`, `normalizeForLookup()` — source unique (DRY) |
+| `src/lib/letter-frequencies.ts` | Table statique des scores de rareté par lettre (A-Z) |
+| `src/lib/bigram-frequencies.ts` | Table statique des ~35 bigrammes FR les plus courants |
+| `src/lib/difficulty-scorer.ts` | Calcul du score composite 6 critères (`computeDifficultyScore()`) |
+| `src/lib/word-frequencies.ts` | **Généré** — scores de fréquence Lexique 3 pour chaque mot |
+| `src/lib/word-classifications.ts` | **Généré** — mot, catégorie, difficulté, letterCount pré-calculés |
+| `data/lexique3-top10k.csv` | Fichier de référence Lexique 3 (~350 mots FR avec fréquences réelles) |
+| `scripts/source-hash.ts` | Module partagé : `SOURCE_FILES`, `computeSourceHash()`, `getStoredHash()` |
+| `scripts/generate-word-frequencies.ts` | Lit CSV → génère `word-frequencies.ts` |
+| `scripts/generate-word-classifications.ts` | Lit words + scorer → génère `word-classifications.ts` |
+| `scripts/check-word-classifications.ts` | Vérifie la fraîcheur des fichiers générés |
+| `scripts/should-check-classifications.ts` | Vérifie si les fichiers staged nécessitent un check (DRY avec `SOURCE_FILES`) |
+| `.jscpd.json` | Config jscpd (seuil 3%, exclusions) |
 
 ### Fichiers modifiés
 
 | Fichier | Changement |
 |---------|------------|
-| `src/lib/words-difficulty.ts` | Simplifié : consomme `word-classifications.ts` (données pures). `classifyWord()` supprimée. Nouveau export `computeDifficultyScore(word)` pour la page pédagogique |
-| `src/lib/difficulty-config.ts` | `wordLengthRange` remplacé par `scoreThreshold` (easy=47, normal=54, hard=100). Descriptions mises à jour ("mots faciles" au lieu de "mots courts", etc.) |
-| `src/types/difficulty.ts` | `DifficultyConfig.wordLengthRange` remplacé par `DifficultyConfig.scoreThreshold`. Nouveau type `DifficultyScoreBreakdown` |
-| `__tests__/lib/words-difficulty.test.ts` | Tests adaptés : cohérence des données générées, validité des sous-scores (0-1), fonctions publiques avec nouveaux seuils |
-| `__tests__/lib/difficulty-config.test.ts` | Tests `wordLengthRange` (lignes 42-49, 79) remplacés par tests `scoreThreshold`. Test des nouvelles descriptions |
-| `.husky/pre-commit` | Ajout du check de fraîcheur des classifications |
-| `package.json` | Ajout scripts `"generate:classifications"` et `"check:classifications"` |
-
-### Fichiers inchangés (contrat préservé)
-
-| Consommateur | Fonction utilisée | Change ? |
-|---|---|---|
-| `useSoloSession.ts` | `getRandomWordByDifficulty(level, usedWords)` | **Non** |
-| `usePvPSession.ts` | idem | **Non** |
-| `useCoopSession.ts` | idem | **Non** |
-| `DifficultySelector.tsx` | `DIFFICULTY_CONFIGS[level].label/description` | **Non** (descriptions mises à jour mais même interface) |
-| `difficulty store` | `DifficultyLevel` type | **Non** |
+| `src/lib/words-difficulty.ts` | Consomme `word-classifications.ts`. `classifyWord()` supprimée. `computeDifficultyScore()` dans `difficulty-scorer.ts` |
+| `src/lib/difficulty-config.ts` | `wordLengthRange` → `scoreThreshold` (easy=47, normal=54, hard=100) |
+| `src/types/difficulty.ts` | `scoreThreshold: number` + `DifficultyScoreBreakdown` |
+| `eslint.config.mjs` | Règles complexity/max-lines/max-depth/max-params (error, zéro tolérance) |
+| `.husky/pre-commit` | 6 checks : fraîcheur, lint-staged, typecheck, tests, duplication |
+| `package.json` | Scripts generate/check + jscpd + tsx |
 
 ### Arbre de dépendances
 
 ```
 data/lexique3-top10k.csv ─────────┐
-src/lib/words.ts ─────────────────┤
-src/lib/letter-frequencies.ts ────┤ (lus par le script)
-src/lib/bigram-frequencies.ts ────┤
                                   ↓
-        scripts/generate-word-classifications.ts
+        scripts/generate-word-frequencies.ts
                                   ↓ (génère)
+        src/lib/word-frequencies.ts ──────┐
+src/lib/words.ts ─────────────────────────┤
+src/lib/letter-frequencies.ts ────────────┤
+src/lib/bigram-frequencies.ts ────────────┤
+src/lib/normalize.ts ─────────────────────┤
+src/lib/difficulty-config.ts ─────────────┤
+                                          ↓
+        src/lib/difficulty-scorer.ts (computeDifficultyScore)
+                                          ↓
+        scripts/generate-word-classifications.ts
+                                          ↓ (génère)
         src/lib/word-classifications.ts
-                                  ↓ (consommé par)
+                                          ↓ (consommé par)
         src/lib/words-difficulty.ts
-                                  ↓
+                                          ↓
         getWordsByDifficulty() / getRandomWordByDifficulty()
-                                  ↓
-        useSoloSession.ts (inchangé)
+                                          ↓
+        useSoloSession / useCoopSession / usePvPSession
 ```
 
-### Hook pre-commit
+### Hook pre-commit (6 checks)
 
 ```bash
-# Dans .husky/pre-commit
-if git diff --cached --name-only | grep -qE "src/lib/(words|letter-frequencies|bigram-frequencies)\.ts"; then
-  npm run check:classifications
-fi
+# 0. Fraîcheur des fichiers générés (via scripts/should-check-classifications.ts)
+# 1. lint-staged (ESLint strict + Prettier)
+# 2. TypeScript typecheck
+# 3. Tests Vitest
+# 4. Détection de duplication jscpd (seuil 3%)
 ```
 
-Le script `check:classifications` :
-1. Calcule un hash des mots dans `words.ts` + `letter-frequencies.ts` + `bigram-frequencies.ts`
-2. Compare avec le hash stocké dans `word-classifications.ts`
-3. Si différent → exit 1 : `"Source data changed. Run 'npm run generate:classifications' first."`
-
-### Nouveau type
-
-```typescript
-interface DifficultyScoreBreakdown {
-  letterRarity: number;    // 0-1
-  uniqueLetters: number;   // 0-1
-  wordFrequency: number;   // 0-1
-  consonantRatio: number;  // 0-1
-  length: number;          // 0-1
-  bigramRarity: number;    // 0-1
-  total: number;           // 0-100
-  level: DifficultyLevel;
-}
-```
+Le check de fraîcheur utilise `scripts/source-hash.ts` — source unique pour la liste des fichiers surveillés (`SOURCE_FILES`). Le hash couvre : `words.ts`, `letter-frequencies.ts`, `bigram-frequencies.ts`, `word-frequencies.ts`, `difficulty-config.ts`, `lexique3-top10k.csv`.
 
 ---
 
 ## Usage futur : page pédagogique in-app
 
-Ce document sert de source pour une future page "Comment ça marche" accessible aux utilisateurs curieux. Le contenu des sections "Les 6 critères", "Seuils de classification" et "Exemples concrets" peut être adapté en composant React avec visualisations interactives. La fonction `computeDifficultyScore(word)` fournit les données nécessaires.
+Ce document sert de source pour une future page "Comment ça marche" accessible aux utilisateurs curieux. Le contenu des sections "Les 6 critères", "Seuils de classification" et "Exemples concrets" peut être adapté en composant React avec visualisations interactives. La fonction `computeDifficultyScore(word)` de `src/lib/difficulty-scorer.ts` fournit les données nécessaires.
