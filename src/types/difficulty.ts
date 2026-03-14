@@ -24,8 +24,8 @@ export interface DifficultyConfig {
   /** Show category hint to player */
   showCategory: boolean;
 
-  /** Word length range [min, max] */
-  wordLengthRange: readonly [min: number, max: number];
+  /** Score threshold — words with score ≤ this value belong to this level */
+  scoreThresholds: number;
 
   /** Score multiplier for rankings */
   scoreMultiplier: number;
@@ -46,6 +46,17 @@ export interface DifficultySelection {
 
   /** Timestamp of selection */
   selectedAt: number;
+}
+
+export interface DifficultyScoreBreakdown {
+  letterRarity: number;
+  uniqueLetters: number;
+  wordFrequency: number;
+  consonantRatio: number;
+  length: number;
+  bigramRarity: number;
+  total: number;
+  level: DifficultyLevel;
 }
 
 /**

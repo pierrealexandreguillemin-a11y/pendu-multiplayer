@@ -39,15 +39,29 @@ describe('difficulty-config', () => {
       );
     });
 
-    it('should have valid wordLengthRange for each level', () => {
+    it('should have valid scoreThresholds for each level', () => {
       const levels: DifficultyLevel[] = ['easy', 'normal', 'hard'];
 
       for (const level of levels) {
         const config = DIFFICULTY_CONFIGS[level];
-        expect(config.wordLengthRange).toHaveLength(2);
-        expect(config.wordLengthRange[0]).toBeLessThanOrEqual(config.wordLengthRange[1]);
-        expect(config.wordLengthRange[0]).toBeGreaterThan(0);
+        expect(typeof config.scoreThresholds).toBe('number');
+        expect(config.scoreThresholds).toBeGreaterThan(0);
       }
+    });
+
+    it('should have increasing scoreThresholds as difficulty increases', () => {
+      expect(DIFFICULTY_CONFIGS.easy.scoreThresholds).toBeLessThan(
+        DIFFICULTY_CONFIGS.normal.scoreThresholds
+      );
+      expect(DIFFICULTY_CONFIGS.normal.scoreThresholds).toBeLessThan(
+        DIFFICULTY_CONFIGS.hard.scoreThresholds
+      );
+    });
+
+    it('should have correct scoreThresholds values', () => {
+      expect(DIFFICULTY_CONFIGS.easy.scoreThresholds).toBe(38);
+      expect(DIFFICULTY_CONFIGS.normal.scoreThresholds).toBe(64);
+      expect(DIFFICULTY_CONFIGS.hard.scoreThresholds).toBe(100);
     });
 
     it('should have French labels', () => {
@@ -76,7 +90,7 @@ describe('difficulty-config', () => {
       expect(config).toHaveProperty('level');
       expect(config).toHaveProperty('maxErrors');
       expect(config).toHaveProperty('showCategory');
-      expect(config).toHaveProperty('wordLengthRange');
+      expect(config).toHaveProperty('scoreThresholds');
       expect(config).toHaveProperty('scoreMultiplier');
       expect(config).toHaveProperty('label');
       expect(config).toHaveProperty('description');

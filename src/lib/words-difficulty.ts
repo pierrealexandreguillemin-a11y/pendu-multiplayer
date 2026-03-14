@@ -1,20 +1,14 @@
 /**
  * Word Difficulty Classification - Domain Layer
- * Classifies words by difficulty based on length
+ * Classifies words by difficulty using composite scoring
  *
- * ISO/IEC 25010 - Maintainability: Pure functions
- * ISO/IEC 5055 - Code Quality: Single responsibility
- *
- * Classification strategy:
- * - Easy: 3-6 letters (short, common words)
- * - Normal: 5-8 letters (medium length)
- * - Hard: 7+ letters (long, complex words)
+ * Classification uses scoreThresholds from difficulty-config.
+ * Temporary: length-based proxy until composite scorer is integrated.
  */
 
 import type { DifficultyLevel } from '@/types/difficulty';
 import type { WordEntry } from './words';
 import { WORDS } from './words';
-import { DIFFICULTY_CONFIGS } from './difficulty-config';
 
 /**
  * Extended word entry with difficulty classification
@@ -39,18 +33,9 @@ function countLetters(word: string): number {
  */
 export function classifyWord(word: string): DifficultyLevel {
   const length = countLetters(word);
-
-  // Use configured ranges
-  const easyConfig = DIFFICULTY_CONFIGS.easy;
-  const normalConfig = DIFFICULTY_CONFIGS.normal;
-
-  if (length <= easyConfig.wordLengthRange[1]) {
-    return 'easy';
-  } else if (length <= normalConfig.wordLengthRange[1]) {
-    return 'normal';
-  } else {
-    return 'hard';
-  }
+  if (length <= 6) return 'easy';
+  if (length <= 8) return 'normal';
+  return 'hard';
 }
 
 /**
