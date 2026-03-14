@@ -24,10 +24,7 @@ const eslintConfig = defineConfig([
     rules: {
       complexity: ['error', { max: 15 }],
       'max-lines': ['error', { max: 400, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': [
-        'error',
-        { max: 100, skipBlankLines: true, skipComments: true },
-      ],
+      'max-lines-per-function': ['error', { max: 100, skipBlankLines: true, skipComments: true }],
       'max-depth': ['error', { max: 4 }],
       'max-params': ['error', { max: 4 }],
     },
@@ -39,10 +36,7 @@ const eslintConfig = defineConfig([
     rules: {
       complexity: ['error', { max: 10 }],
       'max-lines': ['error', { max: 200, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': [
-        'error',
-        { max: 55, skipBlankLines: true, skipComments: true },
-      ],
+      'max-lines-per-function': ['error', { max: 55, skipBlankLines: true, skipComments: true }],
     },
   },
 ]);
