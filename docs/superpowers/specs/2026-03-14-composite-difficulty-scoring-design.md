@@ -185,7 +185,7 @@ Lettres uniques : V, E, T, R, I, N, A (7 sur 11). Voyelles : E, E, I, A, I, E (6
 | Fichier | Changement |
 |---------|------------|
 | `src/lib/words-difficulty.ts` | Simplifié : consomme `word-classifications.ts` (données pures). `classifyWord()` supprimée. Nouveau export `getScoreBreakdown(word)` pour la page pédagogique |
-| `src/lib/difficulty-config.ts` | `wordLengthRange` remplacé par `scoreThresholds: { easy: 38, normal: 64, hard: 100 }`. Descriptions mises à jour ("mots faciles" au lieu de "mots courts", etc.) |
+| `src/lib/difficulty-config.ts` | `wordLengthRange` remplacé par `scoreThresholds` (easy=47, normal=54, hard=100). Descriptions mises à jour ("mots faciles" au lieu de "mots courts", etc.) |
 | `src/types/difficulty.ts` | `DifficultyConfig.wordLengthRange` remplacé par `DifficultyConfig.scoreThresholds`. Nouveau type `DifficultyScoreBreakdown` |
 | `__tests__/lib/words-difficulty.test.ts` | Tests adaptés : cohérence des données générées, validité des sous-scores (0-1), fonctions publiques avec nouveaux seuils |
 | `__tests__/lib/difficulty-config.test.ts` | Tests `wordLengthRange` (lignes 42-49, 79) remplacés par tests `scoreThresholds`. Test des nouvelles descriptions |
