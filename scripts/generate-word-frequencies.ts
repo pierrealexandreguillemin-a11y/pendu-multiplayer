@@ -72,10 +72,10 @@ function main() {
 
   // Sort by frequency descending, assign scores based on rank
   // But also use the actual frequency values with log scale relative to corpus
-  // Use log scale with a reference max of 200 (approx highest game word freq)
+  // Use log scale with a reference max computed from actual game word frequencies
   // to spread scores well across [0, 0.79] range
-  const refMax = 200; // roughly the highest freq among game words (France=180)
-  const logRef = Math.log(refMax + 1);
+  const maxGameFreq = Math.max(...gameFreqs.map((g) => g.freq), 1);
+  const logRef = Math.log(maxGameFreq + 1);
 
   for (const { key, freq } of gameFreqs) {
     // Map freq to [0, ~0.79] using log scale
