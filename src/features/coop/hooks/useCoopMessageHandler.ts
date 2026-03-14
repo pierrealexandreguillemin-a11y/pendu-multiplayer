@@ -1,29 +1,10 @@
 /**
- * Coop Message Handler - Delegates to shared multiplayer message handler.
+ * Coop Message Handler Types
+ *
+ * Re-exports multiplayer types with coop-specific names for clarity.
+ * Overrides are defined in useCoopEffects.ts where they're consumed.
  */
 
-import type { GameMessage } from '@/types/game';
-import type {
-  MultiplayerRefs,
-  MultiplayerActions,
-  MessageHandlerOverrides,
-} from '@/features/multiplayer';
-import { buildMultiplayerMessageHandler } from '@/features/multiplayer';
+import type { MultiplayerRefs } from '@/features/multiplayer';
 
 export type CoopRefs = MultiplayerRefs;
-export type CoopActions = MultiplayerActions;
-
-const COOP_OVERRIDES: MessageHandlerOverrides = {
-  logPrefix: 'Coop',
-  onRestart: (refs, actions) => {
-    refs.gameRef.current.startGame();
-    actions.setPhase('playing');
-  },
-  turnChangeRequiresNonHost: false,
-};
-
-export function buildCoopMessageHandler(refs: CoopRefs, actions: CoopActions) {
-  return buildMultiplayerMessageHandler(refs, actions, COOP_OVERRIDES) as (
-    message: GameMessage
-  ) => void;
-}

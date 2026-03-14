@@ -1,28 +1,10 @@
 /**
- * PvP Message Handler - Delegates to shared multiplayer message handler.
+ * PvP Message Handler Types
+ *
+ * Re-exports multiplayer types with PvP-specific names for clarity.
+ * Overrides are defined in usePvPEffects.ts where they're consumed.
  */
 
-import type { GameMessage } from '@/types/game';
-import type {
-  MultiplayerRefs,
-  MultiplayerActions,
-  MessageHandlerOverrides,
-} from '@/features/multiplayer';
-import { buildMultiplayerMessageHandler } from '@/features/multiplayer';
+import type { MultiplayerRefs } from '@/features/multiplayer';
 
 export type PvPRefs = MultiplayerRefs;
-export type PvPActions = MultiplayerActions;
-
-const PVP_OVERRIDES: MessageHandlerOverrides = {
-  logPrefix: 'PvP',
-  onRestart: (_refs, actions) => {
-    if (!actions.isHost) actions.setPhase('waiting');
-  },
-  turnChangeRequiresNonHost: true,
-};
-
-export function buildPvPMessageHandler(refs: PvPRefs, actions: PvPActions) {
-  return buildMultiplayerMessageHandler(refs, actions, PVP_OVERRIDES) as (
-    message: GameMessage
-  ) => void;
-}
