@@ -4,7 +4,7 @@
 echo "Running pre-commit checks..."
 
 # 0. Check word classifications freshness (if source files changed)
-if git diff --cached --name-only | grep -qE "src/lib/(words|letter-frequencies|bigram-frequencies|word-frequencies)\.ts"; then
+if git diff --cached --name-only | grep -qE "src/lib/(words|letter-frequencies|bigram-frequencies|word-frequencies|difficulty-config)\.ts"; then
   echo "Checking word classifications freshness..."
   npm run check:classifications
 fi

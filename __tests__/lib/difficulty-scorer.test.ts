@@ -96,10 +96,14 @@ describe('difficulty-scorer', () => {
       expect(result.total).toBe(Math.round(reconstructed * 100));
     });
 
-    it('should classify according to scoreThresholds', () => {
+    it('should classify according to scoreThresholds from config', async () => {
+      // Import actual thresholds to avoid hardcoding stale values
+      const { DIFFICULTY_CONFIGS } = await import('@/lib/difficulty-config');
       const result = computeDifficultyScore('pomme');
-      if (result.total <= 38) expect(result.level).toBe('easy');
-      else if (result.total <= 64) expect(result.level).toBe('normal');
+      if (result.total <= DIFFICULTY_CONFIGS.easy.scoreThresholds)
+        expect(result.level).toBe('easy');
+      else if (result.total <= DIFFICULTY_CONFIGS.normal.scoreThresholds)
+        expect(result.level).toBe('normal');
       else expect(result.level).toBe('hard');
     });
   });

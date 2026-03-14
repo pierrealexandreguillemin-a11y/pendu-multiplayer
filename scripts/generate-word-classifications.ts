@@ -9,25 +9,9 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as crypto from 'node:crypto';
+import { computeSourceHash } from './source-hash';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-
-// Compute hash of source files
-function computeSourceHash(): string {
-  const files = [
-    'src/lib/words.ts',
-    'src/lib/letter-frequencies.ts',
-    'src/lib/bigram-frequencies.ts',
-    'src/lib/word-frequencies.ts',
-  ];
-  const hash = crypto.createHash('sha256');
-  for (const file of files) {
-    const content = fs.readFileSync(path.join(PROJECT_ROOT, file), 'utf-8');
-    hash.update(content);
-  }
-  return hash.digest('hex').slice(0, 16);
-}
 
 interface WordClassification {
   word: string;
@@ -77,7 +61,7 @@ async function main() {
     stats[c.difficulty as keyof typeof stats]++;
   }
 
-  const sourceHash = computeSourceHash();
+  const sourceHash = computeSourceHash(PROJECT_ROOT);
   const total = classifications.length;
 
   const output = `/**

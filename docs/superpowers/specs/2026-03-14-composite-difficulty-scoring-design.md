@@ -1,6 +1,6 @@
 ---
 title: Score composite de difficulté — Standards de l'industrie
-version: 1.4
+version: 1.5
 date: 2026-03-14
 status: approved
 llm-context: >
@@ -94,13 +94,15 @@ Chaque sous-score est normalisé entre 0 et 1 avant pondération.
 
 L'app utilise des `maxErrors` différents par niveau (easy=10, normal=7, hard=5). Les seuils produisent une **courbe de difficulté asymétrique** standard des jeux casual : le joueur doit réussir plus souvent qu'il échoue pour rester engagé.
 
-| Niveau | Score | Distribution cible | Justification |
-|--------|-------|-------------------|---------------|
-| easy (10 essais) | 0–38 | ~40% des mots | Généreux : 10 erreurs pardonnent beaucoup, pool large pour les débutants |
-| normal (7 essais) | 39–64 | ~35% des mots | Le coeur de jeu : 7 erreurs = pendu classique |
-| hard (5 essais) | 65–100 | ~25% des mots | Rareté : les mots durs sont un défi, pas la norme |
+| Niveau | Score | Distribution cible | Distribution réelle (120 mots) |
+|--------|-------|-------------------|-------------------------------|
+| easy (10 essais) | 0–47 | ~40% des mots | 43% (51 mots) |
+| normal (7 essais) | 48–54 | ~35% des mots | 34% (41 mots) |
+| hard (5 essais) | 55–100 | ~25% des mots | 23% (28 mots) |
 
-Les seuils sont configurables dans `difficulty-config.ts` via `scoreThresholds: { easy: 38, normal: 64, hard: 100 }`. Les mots avec un score supérieur au seuil `normal` sont classés `hard`. Les seuils pourront être ajustés empiriquement après observation des taux de victoire.
+Les seuils sont configurables dans `difficulty-config.ts` via `scoreThresholds` (un seuil par niveau : easy=47, normal=54, hard=100). Un mot avec un score ≤ au seuil `easy` est classé easy, ≤ `normal` est classé normal, sinon hard. Les seuils ont été calibrés empiriquement à partir de la distribution réelle des scores (range 35-65 sur les 120 mots) et pourront être réajustés après observation des taux de victoire.
+
+> Note d'implémentation : `scoreThresholds` est un `number` scalaire par entrée de config (pas un objet), ce qui simplifie le code de classification. Chaque `DifficultyConfig` porte son propre seuil.
 
 ## Exemples concrets avec sous-scores
 
