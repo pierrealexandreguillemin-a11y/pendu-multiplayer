@@ -15,12 +15,12 @@ test.describe('Solo Mode', () => {
   });
 
   test('should display player name input', async ({ page }) => {
-    await expect(page.getByPlaceholder(/pseudo/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/ex.*marie/i)).toBeVisible();
   });
 
   test('should start game after entering name and clicking play', async ({ page }) => {
     // Enter player name
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
 
     // Click play button
     await page.getByRole('button', { name: /commencer/i }).click();
@@ -30,7 +30,7 @@ test.describe('Solo Mode', () => {
   });
 
   test('should show AZERTY keyboard layout', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     // AZERTY first row starts with A, Z, E, R, T, Y
@@ -43,7 +43,7 @@ test.describe('Solo Mode', () => {
   });
 
   test('should update keyboard on letter click', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     // Wait for keyboard
@@ -58,7 +58,7 @@ test.describe('Solo Mode', () => {
   });
 
   test('should support physical keyboard input', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
@@ -71,7 +71,7 @@ test.describe('Solo Mode', () => {
   });
 
   test('should show balloon display', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     // Balloons should be visible

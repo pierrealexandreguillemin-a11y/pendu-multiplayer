@@ -61,7 +61,7 @@ test.describe('Leaderboard', () => {
     await page.getByText(/difficile/i).click();
 
     // Play a quick game to generate a score entry
-    await page.getByPlaceholder(/pseudo/i).fill('E2ELeaderboard');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2ELeaderboard');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 

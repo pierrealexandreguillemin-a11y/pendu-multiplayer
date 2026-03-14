@@ -44,7 +44,7 @@ test.describe('Difficulty Selector', () => {
     await page.getByText(/difficile/i).click();
 
     // Start game
-    await page.getByPlaceholder(/pseudo/i).fill('DiffTest');
+    await page.getByPlaceholder(/ex.*marie/i).fill('DiffTest');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     // Game should start

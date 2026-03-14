@@ -14,7 +14,7 @@ test.describe('Solo Full Game', () => {
 
   test('should play through a complete game until victory or defeat', async ({ page }) => {
     // Step 1: Enter name and start
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
 
     // Step 2: Game should start - keyboard visible
@@ -52,7 +52,7 @@ test.describe('Solo Full Game', () => {
   });
 
   test('should show score on victory screen', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 
@@ -80,7 +80,7 @@ test.describe('Solo Full Game', () => {
     // Select hard mode to minimize max errors (fewer chances = faster defeat)
     await page.getByText(/difficile/i).click();
 
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 
@@ -105,7 +105,7 @@ test.describe('Solo Full Game', () => {
   });
 
   test('should disable guessed letters', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 
@@ -121,7 +121,7 @@ test.describe('Solo Full Game', () => {
   });
 
   test('should show balloon display with correct aria label', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 
@@ -131,7 +131,7 @@ test.describe('Solo Full Game', () => {
   });
 
   test('should update balloon count after wrong guess', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('E2EPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('E2EPlayer');
     await page.getByRole('button', { name: /commencer/i }).click();
     await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
 

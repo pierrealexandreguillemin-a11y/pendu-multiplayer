@@ -15,7 +15,7 @@ test.describe('Coop Mode', () => {
   });
 
   test('should have player name input', async ({ page }) => {
-    await expect(page.getByPlaceholder(/pseudo/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/ex.*marie/i)).toBeVisible();
   });
 
   test('should have create and join buttons', async ({ page }) => {
@@ -29,27 +29,27 @@ test.describe('Coop Mode', () => {
 
   test('should disable create button when no name entered', async ({ page }) => {
     // Clear any pre-filled name from localStorage
-    await page.getByPlaceholder(/pseudo/i).clear();
+    await page.getByPlaceholder(/ex.*marie/i).clear();
     await expect(page.getByRole('button', { name: /créer une partie/i })).toBeDisabled();
   });
 
   test('should disable join button when no name or code', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).clear();
+    await page.getByPlaceholder(/ex.*marie/i).clear();
     await expect(page.getByRole('button', { name: /rejoindre/i })).toBeDisabled();
   });
 
   test('should disable join button when name filled but no code', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await expect(page.getByRole('button', { name: /rejoindre/i })).toBeDisabled();
   });
 
   test('should enable create button when name is entered', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await expect(page.getByRole('button', { name: /créer une partie/i })).toBeEnabled();
   });
 
   test('should enable join button when name and code are entered', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('TestPlayer');
+    await page.getByPlaceholder(/ex.*marie/i).fill('TestPlayer');
     await page.getByPlaceholder(/code/i).fill('abc123');
     await expect(page.getByRole('button', { name: /rejoindre/i })).toBeEnabled();
   });

@@ -16,7 +16,7 @@ test.describe('PvP Mode', () => {
   });
 
   test('should have player name input', async ({ page }) => {
-    await expect(page.getByPlaceholder(/pseudo/i)).toBeVisible();
+    await expect(page.getByPlaceholder(/ex.*marie/i)).toBeVisible();
   });
 
   test('should have host and guest buttons with distinct labels', async ({ page }) => {
@@ -29,22 +29,22 @@ test.describe('PvP Mode', () => {
   });
 
   test('should disable host button when no name entered', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).clear();
+    await page.getByPlaceholder(/ex.*marie/i).clear();
     await expect(page.getByRole('button', { name: /je choisis le mot/i })).toBeDisabled();
   });
 
   test('should disable guest button when no name or code', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).clear();
+    await page.getByPlaceholder(/ex.*marie/i).clear();
     await expect(page.getByRole('button', { name: /je devine/i })).toBeDisabled();
   });
 
   test('should enable host button when name is entered', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('Maitre');
+    await page.getByPlaceholder(/ex.*marie/i).fill('Maitre');
     await expect(page.getByRole('button', { name: /je choisis le mot/i })).toBeEnabled();
   });
 
   test('should enable guest button when name and code are entered', async ({ page }) => {
-    await page.getByPlaceholder(/pseudo/i).fill('Devineur');
+    await page.getByPlaceholder(/ex.*marie/i).fill('Devineur');
     await page.getByPlaceholder(/code/i).fill('abc123');
     await expect(page.getByRole('button', { name: /je devine/i })).toBeEnabled();
   });

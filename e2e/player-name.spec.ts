@@ -27,7 +27,7 @@ test.describe('Player Name Persistence', () => {
 
     // Navigate to coop — name should be auto-filled
     await page.goto('/coop');
-    const coopInput = page.getByRole('textbox', { name: /pseudo|nom|joueur/i }).first();
+    const coopInput = page.getByRole('textbox').first();
     await expect(coopInput).toHaveValue('Joueur42');
   });
 
