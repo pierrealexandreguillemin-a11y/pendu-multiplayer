@@ -100,9 +100,9 @@ L'app utilise des `maxErrors` différents par niveau (easy=10, normal=7, hard=5)
 | normal (7 essais) | 48–54 | ~35% des mots | 34% (41 mots) |
 | hard (5 essais) | 55–100 | ~25% des mots | 23% (28 mots) |
 
-Les seuils sont configurables dans `difficulty-config.ts` via `scoreThresholds` (un seuil par niveau : easy=47, normal=54, hard=100). Un mot avec un score ≤ au seuil `easy` est classé easy, ≤ `normal` est classé normal, sinon hard. Les seuils ont été calibrés empiriquement à partir de la distribution réelle des scores (range 35-65 sur les 120 mots) et pourront être réajustés après observation des taux de victoire.
+Les seuils sont configurables dans `difficulty-config.ts` via `scoreThreshold` (un seuil par niveau : easy=47, normal=54, hard=100). Un mot avec un score ≤ au seuil `easy` est classé easy, ≤ `normal` est classé normal, sinon hard. Les seuils ont été calibrés empiriquement à partir de la distribution réelle des scores (range 35-65 sur les 120 mots) et pourront être réajustés après observation des taux de victoire.
 
-> Note d'implémentation : `scoreThresholds` est un `number` scalaire par entrée de config (pas un objet), ce qui simplifie le code de classification. Chaque `DifficultyConfig` porte son propre seuil.
+> Note d'implémentation : `scoreThreshold` est un `number` scalaire par entrée de config (pas un objet), ce qui simplifie le code de classification. Chaque `DifficultyConfig` porte son propre seuil.
 
 ## Exemples concrets avec sous-scores
 
@@ -184,11 +184,11 @@ Lettres uniques : V, E, T, R, I, N, A (7 sur 11). Voyelles : E, E, I, A, I, E (6
 
 | Fichier | Changement |
 |---------|------------|
-| `src/lib/words-difficulty.ts` | Simplifié : consomme `word-classifications.ts` (données pures). `classifyWord()` supprimée. Nouveau export `getScoreBreakdown(word)` pour la page pédagogique |
-| `src/lib/difficulty-config.ts` | `wordLengthRange` remplacé par `scoreThresholds` (easy=47, normal=54, hard=100). Descriptions mises à jour ("mots faciles" au lieu de "mots courts", etc.) |
-| `src/types/difficulty.ts` | `DifficultyConfig.wordLengthRange` remplacé par `DifficultyConfig.scoreThresholds`. Nouveau type `DifficultyScoreBreakdown` |
+| `src/lib/words-difficulty.ts` | Simplifié : consomme `word-classifications.ts` (données pures). `classifyWord()` supprimée. Nouveau export `computeDifficultyScore(word)` pour la page pédagogique |
+| `src/lib/difficulty-config.ts` | `wordLengthRange` remplacé par `scoreThreshold` (easy=47, normal=54, hard=100). Descriptions mises à jour ("mots faciles" au lieu de "mots courts", etc.) |
+| `src/types/difficulty.ts` | `DifficultyConfig.wordLengthRange` remplacé par `DifficultyConfig.scoreThreshold`. Nouveau type `DifficultyScoreBreakdown` |
 | `__tests__/lib/words-difficulty.test.ts` | Tests adaptés : cohérence des données générées, validité des sous-scores (0-1), fonctions publiques avec nouveaux seuils |
-| `__tests__/lib/difficulty-config.test.ts` | Tests `wordLengthRange` (lignes 42-49, 79) remplacés par tests `scoreThresholds`. Test des nouvelles descriptions |
+| `__tests__/lib/difficulty-config.test.ts` | Tests `wordLengthRange` (lignes 42-49, 79) remplacés par tests `scoreThreshold`. Test des nouvelles descriptions |
 | `.husky/pre-commit` | Ajout du check de fraîcheur des classifications |
 | `package.json` | Ajout scripts `"generate:classifications"` et `"check:classifications"` |
 
@@ -254,4 +254,4 @@ interface DifficultyScoreBreakdown {
 
 ## Usage futur : page pédagogique in-app
 
-Ce document sert de source pour une future page "Comment ça marche" accessible aux utilisateurs curieux. Le contenu des sections "Les 6 critères", "Seuils de classification" et "Exemples concrets" peut être adapté en composant React avec visualisations interactives. La fonction `getScoreBreakdown(word)` fournit les données nécessaires.
+Ce document sert de source pour une future page "Comment ça marche" accessible aux utilisateurs curieux. Le contenu des sections "Les 6 critères", "Seuils de classification" et "Exemples concrets" peut être adapté en composant React avec visualisations interactives. La fonction `computeDifficultyScore(word)` fournit les données nécessaires.

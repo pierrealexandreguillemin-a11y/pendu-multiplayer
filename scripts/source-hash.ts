@@ -9,13 +9,14 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 
-/** Files that affect the generated word-classifications.ts */
+/** Files that affect the generated word-frequencies.ts and word-classifications.ts */
 export const SOURCE_FILES = [
   'src/lib/words.ts',
   'src/lib/letter-frequencies.ts',
   'src/lib/bigram-frequencies.ts',
   'src/lib/word-frequencies.ts',
   'src/lib/difficulty-config.ts',
+  'data/lexique3-top10k.csv',
 ] as const;
 
 /**

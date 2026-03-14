@@ -138,9 +138,8 @@ export const WORD_FREQUENCY_SCORES: ReadonlyMap<string, number> = new Map([
 
 /**
  * Get frequency score for a word (0 = very common, 1 = very rare).
- * Case-insensitive, accent-insensitive lookup.
+ * Case-insensitive, accent-insensitive lookup via shared normalize utility.
  */
 export function getWordFrequencyScore(word: string): number {
-  const normalized = normalizeForLookup(word);
-  return WORD_FREQUENCY_SCORES.get(normalized) ?? DEFAULT_UNKNOWN_SCORE;
+  return WORD_FREQUENCY_SCORES.get(normalizeForLookup(word)) ?? DEFAULT_UNKNOWN_SCORE;
 }
