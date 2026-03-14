@@ -10,6 +10,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { computeSourceHash } from './source-hash';
+import { parseWordsCsv } from './parse-words-csv';
+import { VALID_CATEGORIES } from '../src/lib/categories';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
@@ -22,11 +24,11 @@ interface WordClassification {
 
 async function main() {
   // Dynamic imports
-  const { WORDS } = await import('../src/lib/words');
+  const wordEntries = parseWordsCsv(PROJECT_ROOT, VALID_CATEGORIES);
   const { computeDifficultyScore } = await import('../src/lib/difficulty-scorer');
   const { normalizeWord } = await import('../src/lib/normalize');
 
-  const classifications: WordClassification[] = WORDS.map(
+  const classifications: WordClassification[] = wordEntries.map(
     (entry: { word: string; category: string }) => {
       const score = computeDifficultyScore(entry.word);
       const normalized = normalizeWord(entry.word);
