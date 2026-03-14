@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { GameState, Letter, DisplayChar } from '@/types/game';
 import type { DifficultyLevel } from '@/types/difficulty';
 import { createGame, guessLetter, getDisplayWord, canGuess } from '@/lib/game-engine';
-import { getRandomWord } from '@/lib/words';
+import { getRandomWordByDifficulty } from '@/lib/words-difficulty';
 import { useSound } from '@/hooks/useSound';
 
 interface UseGameLogicReturn {
@@ -45,8 +45,17 @@ export function useGameLogic(): UseGameLogicReturn {
       if (customWord) {
         setGameState(createGame({ word: customWord, category, difficulty }));
       } else {
-        const { word, category: randomCategory } = getRandomWord();
-        setGameState(createGame({ word, category: randomCategory, difficulty }));
+        const level = difficulty ?? 'normal';
+        const entry =
+          getRandomWordByDifficulty(level) ??
+          getRandomWordByDifficulty('easy') ??
+          getRandomWordByDifficulty('normal') ??
+          getRandomWordByDifficulty('hard');
+        if (!entry) {
+          console.warn('No words available — all words exhausted');
+          return;
+        }
+        setGameState(createGame({ word: entry.word, category: entry.category, difficulty }));
       }
     },
     []
