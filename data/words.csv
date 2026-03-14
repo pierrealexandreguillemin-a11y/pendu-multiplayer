@@ -1,13 +1,16 @@
 word,category
 aigle,Animal
+âne,Animal
 antilope,Animal
 araignée,Animal
 autruche,Animal
-âne,Animal
 baleine,Animal
 bison,Animal
 blaireau,Animal
+buffle,Animal
+caille,Animal
 canard,Animal
+capybara,Animal
 castor,Animal
 cerf,Animal
 chameau,Animal
@@ -29,12 +32,13 @@ crocodile,Animal
 daim,Animal
 dauphin,Animal
 dinde,Animal
-escargot,Animal
 écureuil,Animal
 éléphant,Animal
 épervier,Animal
+escargot,Animal
 faisan,Animal
 faucon,Animal
+fennec,Animal
 flamant,Animal
 fourmi,Animal
 gazelle,Animal
@@ -49,6 +53,7 @@ hibou,Animal
 hippopotame,Animal
 hirondelle,Animal
 hyène,Animal
+ibis,Animal
 jaguar,Animal
 kangourou,Animal
 lapin,Animal
@@ -61,6 +66,7 @@ lynx,Animal
 manchot,Animal
 marmotte,Animal
 merle,Animal
+morse,Animal
 mouette,Animal
 moufette,Animal
 moustique,Animal
@@ -73,6 +79,7 @@ panda,Animal
 panthère,Animal
 paon,Animal
 papillon,Animal
+pélican,Animal
 perroquet,Animal
 phoque,Animal
 pie,Animal
@@ -94,14 +101,19 @@ taupe,Animal
 tigre,Animal
 tortue,Animal
 vautour,Animal
+vison,Animal
 zèbre,Animal
 abstraction,Art
 aquarelle,Art
+aquatinte,Art
 architecture,Art
+atelier,Art
+ballet,Art
 bande-dessinee,Art
 broderie,Art
 burin,Art
 calligraphie,Art
+canevas,Art
 caricature,Art
 cartoon,Art
 cendrillon,Art
@@ -109,36 +121,48 @@ céramique,Art
 chevalet,Art
 cinéma,Art
 collage,Art
+comédie,Art
 craie,Art
 crayon,Art
 cubisme,Art
 decor,Art
 dessin,Art
 diorama,Art
+diptyque,Art
 enluminure,Art
 estampe,Art
 estompe,Art
 expressionnisme,Art
+fable,Art
+farce,Art
+figurine,Art
 filigrane,Art
 fresque,Art
+fronton,Art
 fusain,Art
 galerie,Art
 gothique,Art
 gravure,Art
 icone,Art
+illustration,Art
 impressionnisme,Art
 installation,Art
 laque,Art
 lavis,Art
 lithographie,Art
 maquette,Art
+masque,Art
+mime,Art
 mosaïque,Art
 motif,Art
 moulage,Art
 murale,Art
 nature-morte,Art
+novella,Art
 nuance,Art
+oeuvre,Art
 ombre,Art
+onomatopée,Art
 origami,Art
 palette,Art
 panorama,Art
@@ -154,15 +178,17 @@ pochoir,Art
 portrait,Art
 poterie,Art
 profil,Art
-relief,Art
 réalisme,Art
+relief,Art
 romantisme,Art
 scenario,Art
 sculpture,Art
 sérigraphie,Art
+signe,Art
 silhouette,Art
 sketch,Art
 spatule,Art
+strophe,Art
 surréalisme,Art
 tapisserie,Art
 teinte,Art
@@ -171,43 +197,59 @@ tempera,Art
 texture,Art
 toile,Art
 trompe-œil,Art
+ukulele,Art
 vannerie,Art
 vernis,Art
 vitrail,Art
 volume,Art
 xylographie,Art
 abdomen,Corps humain
+aisselle,Corps humain
+amygdale,Corps humain
+appendice,Corps humain
+aréole,Corps humain
 artère,Corps humain
 bassin,Corps humain
 biceps,Corps humain
 boyau,Corps humain
+bronche,Corps humain
 caillot,Corps humain
+capillaire,Corps humain
 cartilage,Corps humain
 cerveau,Corps humain
 cheville,Corps humain
 cils,Corps humain
 clavicule,Corps humain
+coccyx,Corps humain
 colonne,Corps humain
 cornee,Corps humain
-coude,Corps humain
 côte,Corps humain
+coude,Corps humain
 crane,Corps humain
+creux,Corps humain
 cuisse,Corps humain
 cœur,Corps humain
 dent,Corps humain
 diaphragme,Corps humain
 doigt,Corps humain
 dos,Corps humain
+duodenum,Corps humain
 epaule,Corps humain
-estomac,Corps humain
 épaule,Corps humain
+épiderme,Corps humain
+estomac,Corps humain
 fémur,Corps humain
+fesse,Corps humain
+flanc,Corps humain
 foie,Corps humain
 front,Corps humain
 gencive,Corps humain
 genou,Corps humain
+glande,Corps humain
 gorge,Corps humain
+haleine,Corps humain
 hanche,Corps humain
+hypophyse,Corps humain
 intestin,Corps humain
 iris,Corps humain
 jambe,Corps humain
@@ -216,47 +258,64 @@ langue,Corps humain
 larynx,Corps humain
 lèvre,Corps humain
 ligament,Corps humain
-main,Corps humain
+lobe,Corps humain
+lymphe,Corps humain
 mâchoire,Corps humain
+main,Corps humain
+maxillaire,Corps humain
 membrane,Corps humain
 ménisque,Corps humain
+moelle,Corps humain
+molaire,Corps humain
 mollet,Corps humain
 muscle,Corps humain
 narine,Corps humain
 nerf,Corps humain
+nombril,Corps humain
 nuque,Corps humain
+oesophage,Corps humain
 omoplate,Corps humain
 ongle,Corps humain
 oreille,Corps humain
 orteil,Corps humain
-lobe,Corps humain
 pancréas,Corps humain
 paume,Corps humain
 peau,Corps humain
+phalange,Corps humain
 pied,Corps humain
+plexus,Corps humain
 poignet,Corps humain
 pouce,Corps humain
 poumon,Corps humain
+prostate,Corps humain
 pupille,Corps humain
+radius,Corps humain
+rate,Corps humain
 rein,Corps humain
 rétine,Corps humain
 rotule,Corps humain
 sang,Corps humain
+scapula,Corps humain
 sein,Corps humain
+sinus,Corps humain
 sourcil,Corps humain
+sphincter,Corps humain
 sternum,Corps humain
 tempe,Corps humain
 tendon,Corps humain
 tibia,Corps humain
 trachée,Corps humain
 tronc,Corps humain
+tympan,Corps humain
+ulna,Corps humain
+urètre,Corps humain
 veine,Corps humain
 ventre,Corps humain
 vertèbre,Corps humain
 vessie,Corps humain
 yeux,Corps humain
-sinus,Corps humain
 acropole,Géographie
+Adelaide,Géographie
 Afrique,Géographie
 Alaska,Géographie
 Alger,Géographie
@@ -273,24 +332,32 @@ Atlantique,Géographie
 Australie,Géographie
 baie,Géographie
 Barcelone,Géographie
+Bengale,Géographie
 Berlin,Géographie
+Bogota,Géographie
 Brésil,Géographie
 Budapest,Géographie
+Caire,Géographie
+Cameroun,Géographie
 Canada,Géographie
 canyon,Géographie
 cap,Géographie
 capitale,Géographie
+Caracas,Géographie
 Chili,Géographie
 Chine,Géographie
+Colombie,Géographie
 continent,Géographie
 Copenhague,Géographie
 Danube,Géographie
+delta,Géographie
 désert,Géographie
 détroit,Géographie
 dune,Géographie
-Europe,Géographie
 Égypte,Géographie
 équateur,Géographie
+estuaire,Géographie
+Europe,Géographie
 fjord,Géographie
 fleuve,Géographie
 France,Géographie
@@ -298,14 +365,18 @@ Gange,Géographie
 Geneve,Géographie
 glacier,Géographie
 golfe,Géographie
+Helsinki,Géographie
 Himalaya,Géographie
+île,Géographie
 Inde,Géographie
 Islande,Géographie
 Istanbul,Géographie
 Italie,Géographie
-île,Géographie
+Jakarta,Géographie
 Japon,Géographie
 jungle,Géographie
+Kilimandjaro,Géographie
+Kinshasa,Géographie
 lagon,Géographie
 Lagos,Géographie
 lande,Géographie
@@ -314,6 +385,7 @@ Londres,Géographie
 Madrid,Géographie
 Maroc,Géographie
 Marseille,Géographie
+mesa,Géographie
 Mexique,Géographie
 montagne,Géographie
 Montreal,Géographie
@@ -332,9 +404,12 @@ plaine,Géographie
 plateau,Géographie
 Portugal,Géographie
 prairie,Géographie
+Pretoria,Géographie
 Pyrénées,Géographie
+Rabat,Géographie
 Rhin,Géographie
 Rome,Géographie
+Santiago,Géographie
 savane,Géographie
 Seine,Géographie
 Séoul,Géographie
@@ -350,34 +425,54 @@ Varsovie,Géographie
 Venezuela,Géographie
 Vienne,Géographie
 acier,Histoire
+amnistie,Histoire
 amphithéâtre,Histoire
+annales,Histoire
 antiquité,Histoire
+archives,Histoire
+armistice,Histoire
 armure,Histoire
 bagne,Histoire
+banniere,Histoire
 bastion,Histoire
-butin,Histoire
+blocus,Histoire
+bourreau,Histoire
 bûcher,Histoire
+butin,Histoire
+capitaine,Histoire
+capitule,Histoire
+cartouche,Histoire
 catacombes,Histoire
 catapulte,Histoire
 cathédrale,Histoire
+centurion,Histoire
 charte,Histoire
 chevalier,Histoire
+citadelle,Histoire
 cite,Histoire
 civilisation,Histoire
+clerc,Histoire
 colisée,Histoire
 colonie,Histoire
 conquête,Histoire
 consul,Histoire
 corvee,Histoire
+couronne,Histoire
+coutume,Histoire
 croisade,Histoire
-despote,Histoire
 déclaration,Histoire
 découverte,Histoire
 démocratie,Histoire
+despote,Histoire
+domaine,Histoire
 donjon,Histoire
+dragon,Histoire
 duc,Histoire
 dynastie,Histoire
+ecu,Histoire
+effigie,Histoire
 empire,Histoire
+enceinte,Histoire
 epopee,Histoire
 esclave,Histoire
 exil,Histoire
@@ -385,46 +480,62 @@ exode,Histoire
 féodal,Histoire
 fief,Histoire
 forum,Histoire
+fossé,Histoire
+gaule,Histoire
+gibet,Histoire
 gladiateur,Histoire
 gouverneur,Histoire
+graal,Histoire
 guerre,Histoire
 guillotine,Histoire
 hallebarde,Histoire
 héraut,Histoire
+horde,Histoire
 invasion,Histoire
+joute,Histoire
 lance,Histoire
 légion,Histoire
 légionnaire,Histoire
+liege,Histoire
 manuscrit,Histoire
+mecenat,Histoire
+médiéval,Histoire
 menhir,Histoire
 mercenaire,Histoire
-médiéval,Histoire
 momie,Histoire
 monarque,Histoire
 monastère,Histoire
 noblesse,Histoire
+obole,Histoire
+officier,Histoire
 oriflamme,Histoire
 otage,Histoire
 parchemin,Histoire
 pharaon,Histoire
 pirate,Histoire
+plebiscite,Histoire
+prestige,Histoire
 pyramide,Histoire
 reforme,Histoire
 regent,Histoire
-renaissance,Histoire
 règne,Histoire
+renaissance,Histoire
 révolution,Histoire
 roi,Histoire
 ruine,Histoire
+sceptre,Histoire
 seigneur,Histoire
 sénat,Histoire
+serment,Histoire
 silex,Histoire
+solde,Histoire
 sphinx,Histoire
 suzerain,Histoire
 temple,Histoire
 tombeau,Histoire
 tribun,Histoire
 trône,Histoire
+trophée,Histoire
 tyran,Histoire
 vassal,Histoire
 victoire,Histoire
@@ -433,9 +544,11 @@ alliance,Maison
 armoire,Maison
 baignoire,Maison
 balai,Maison
+balcon,Maison
 bibliothèque,Maison
 bocal,Maison
 bouteille,Maison
+brique,Maison
 buffet,Maison
 cafetiere,Maison
 canapé,Maison
@@ -443,29 +556,43 @@ carafe,Maison
 carrelage,Maison
 casserole,Maison
 cave,Maison
+chaudière,Maison
 cheminée,Maison
 ciseaux,Maison
 clé,Maison
+clôture,Maison
 commode,Maison
 congélateur,Maison
+corbeille,Maison
 couloir,Maison
 coussin,Maison
 couvercle,Maison
+couverts,Maison
 cuisine,Maison
 cuisinière,Maison
+débarras,Maison
+desserte,Maison
 dictionnaire,Maison
 douche,Maison
 drap,Maison
+entree,Maison
+escabeau,Maison
 escalier,Maison
+etabli,Maison
 étagère,Maison
 fauteuil,Maison
 fenêtre,Maison
 fer,Maison
 four,Maison
+foyer,Maison
 garage,Maison
+gouttière,Maison
 grille,Maison
 grille-pain,Maison
+guéridon,Maison
+hall,Maison
 horloge,Maison
+interrupteur,Maison
 jardin,Maison
 lampe,Maison
 lavabo,Maison
@@ -473,6 +600,7 @@ lave-linge,Maison
 lave-vaisselle,Maison
 lit,Maison
 loquet,Maison
+lucarne,Maison
 lunettes,Maison
 lustre,Maison
 marmite,Maison
@@ -482,20 +610,27 @@ miroir,Maison
 moquette,Maison
 mortier,Maison
 mur,Maison
+nappe,Maison
 oreiller,Maison
 parapluie,Maison
 parquet,Maison
 pelle,Maison
 pendule,Maison
 percolateur,Maison
+pergola,Maison
+perron,Maison
+pilier,Maison
 placard,Maison
 plafond,Maison
+plaque,Maison
 poele,Maison
 porte,Maison
 poubelle,Maison
+poutre,Maison
 prise,Maison
 radiateur,Maison
 réfrigérateur,Maison
+ressort,Maison
 réveil,Maison
 rideau,Maison
 robinet,Maison
@@ -510,16 +645,20 @@ table,Maison
 tableau,Maison
 tabouret,Maison
 tapis,Maison
+terrace,Maison
 theiere,Maison
 tiroir,Maison
 toilette,Maison
 toiture,Maison
 torchon,Maison
+tuyau,Maison
 valise,Maison
 vase,Maison
 ventilateur,Maison
+veranda,Maison
 vitre,Maison
 volet,Maison
+acupuncteur,Métier
 agent,Métier
 agronome,Métier
 ambassadeur,Métier
@@ -544,9 +683,13 @@ chauffeur,Métier
 chercheur,Métier
 chimiste,Métier
 chirurgien,Métier
+comedien,Métier
 comptable,Métier
 confiseur,Métier
 conseiller,Métier
+cosmetologue,Métier
+couturier,Métier
+croupier,Métier
 cuisinier,Métier
 decorateur,Métier
 dentiste,Métier
@@ -556,11 +699,11 @@ dieteticien,Métier
 diplomate,Métier
 directeur,Métier
 douanier,Métier
+économiste,Métier
 educateur,Métier
+électricien,Métier
 enseignant,Métier
 entraineur,Métier
-économiste,Métier
-électricien,Métier
 épicier,Métier
 facteur,Métier
 fermier,Métier
@@ -568,6 +711,7 @@ fleuriste,Métier
 fromager,Métier
 gendarme,Métier
 géologue,Métier
+herboriste,Métier
 historien,Métier
 hotelier,Métier
 huissier,Métier
@@ -575,25 +719,28 @@ imprimeur,Métier
 informaticien,Métier
 ingénieur,Métier
 instituteur,Métier
+interne,Métier
 jardinier,Métier
 journaliste,Métier
 juge,Métier
 libraire,Métier
+livreur,Métier
 luthier,Métier
 maçon,Métier
 magistrat,Métier
 mannequin,Métier
 marechal,Métier
-mediateur,Métier
-menuisier,Métier
 mécanicien,Métier
 médecin,Métier
+mediateur,Métier
+menuisier,Métier
 militaire,Métier
 modeliste,Métier
 musicien,Métier
 nageur,Métier
 negociant,Métier
 notaire,Métier
+oenologue,Métier
 opticien,Métier
 osteopathe,Métier
 paleontologue,Métier
@@ -626,26 +773,40 @@ batterie,Musique
 bemol,Musique
 berceuse,Musique
 blues,Musique
+boléro,Musique
+bourdon,Musique
+bpm,Musique
 cadence,Musique
 caisse,Musique
 canon,Musique
+cantate,Musique
 castagnettes,Musique
+chalumeau,Musique
 chanson,Musique
 chorale,Musique
 chœur,Musique
+cithare,Musique
 clarinette,Musique
 clavecin,Musique
 concerto,Musique
 contrebasse,Musique
 cor,Musique
 cornemuse,Musique
+couplet,Musique
+crescendo,Musique
 cymbale,Musique
 diapason,Musique
+didgeridoo,Musique
 diese,Musique
+dolce,Musique
 duo,Musique
 etude,Musique
+fado,Musique
 fanfare,Musique
+fifre,Musique
+flamenco,Musique
 flûte,Musique
+forte,Musique
 fugue,Musique
 gamme,Musique
 gospel,Musique
@@ -654,17 +815,25 @@ harmonica,Musique
 harmonie,Musique
 harpe,Musique
 improvisation,Musique
+interlude,Musique
 intermede,Musique
 intervalle,Musique
 jazz,Musique
+kyrielle,Musique
+leitmotiv,Musique
+lied,Musique
 luth,Musique
 mandoline,Musique
 marche,Musique
-mesure,Musique
+mazurka,Musique
 mélodie,Musique
+mesure,Musique
+metal,Musique
+mezzo,Musique
 mineur,Musique
 nocturne,Musique
 note,Musique
+ocarino,Musique
 octave,Musique
 opéra,Musique
 orchestre,Musique
@@ -672,18 +841,24 @@ orgue,Musique
 partition,Musique
 piano,Musique
 pipeau,Musique
+pizzicato,Musique
 polka,Musique
 portée,Musique
 prélude,Musique
+psaume,Musique
 rap,Musique
 refrain,Musique
 reggae,Musique
+ritournelle,Musique
 ronde,Musique
 rythme,Musique
+sarabande,Musique
 serenade,Musique
 solfege,Musique
+solo,Musique
 sonate,Musique
 soprano,Musique
+swing,Musique
 symphonie,Musique
 tambour,Musique
 tempo,Musique
@@ -694,6 +869,7 @@ tuba,Musique
 ukulélé,Musique
 valse,Musique
 vibraphone,Musique
+vibrato,Musique
 violon,Musique
 violoncelle,Musique
 virtuose,Musique
@@ -791,8 +967,8 @@ ruisseau,Nature
 sable,Nature
 sapin,Nature
 saule,Nature
-seve,Nature
 séquoia,Nature
+seve,Nature
 soleil,Nature
 source,Nature
 tempête,Nature
@@ -804,9 +980,9 @@ trèfle,Nature
 trombe,Nature
 tulipe,Nature
 vague,Nature
+végétation,Nature
 vent,Nature
 verglas,Nature
-végétation,Nature
 violette,Nature
 abricot,Nourriture
 ail,Nourriture
@@ -853,8 +1029,8 @@ curcuma,Nourriture
 daube,Nourriture
 ecrevisse,Nourriture
 endive,Nourriture
-escalope,Nourriture
 épinard,Nourriture
+escalope,Nourriture
 fenouil,Nourriture
 figue,Nourriture
 flocon,Nourriture
@@ -959,28 +1135,28 @@ cosmologie,Science
 cristal,Science
 decomposition,Science
 deutérium,Science
+éclipse,Science
 ecologie,Science
 electrolyse,Science
-entropie,Science
-enzyme,Science
-espace,Science
-evaporation,Science
-expérience,Science
-éclipse,Science
 électron,Science
 énergie,Science
+entropie,Science
+enzyme,Science
 équation,Science
+espace,Science
 étoile,Science
+evaporation,Science
 évolution,Science
+expérience,Science
 fission,Science
 fluorescence,Science
 formule,Science
 fusion,Science
 galaxie,Science
-germe,Science
 gène,Science
 génétique,Science
 géologie,Science
+germe,Science
 gravité,Science
 hormone,Science
 hydrogène,Science
@@ -1001,10 +1177,10 @@ mitose,Science
 molécule,Science
 mutation,Science
 nanoparticule,Science
+nébuleuse,Science
 neon,Science
 neurone,Science
 neutron,Science
-nébuleuse,Science
 noyau,Science
 nucléaire,Science
 orbite,Science
@@ -1023,8 +1199,8 @@ proteine,Science
 proton,Science
 quasar,Science
 radiation,Science
-reflexe,Science
 réaction,Science
+reflexe,Science
 sediment,Science
 sismique,Science
 solution,Science
@@ -1046,40 +1222,55 @@ aikido,Sport
 alpinisme,Sport
 altérophilie,Sport
 aquagym,Sport
+arbitre,Sport
 arc,Sport
+arene,Sport
 athlétisme,Sport
 aviron,Sport
 badminton,Sport
 balle,Sport
 baseball,Sport
 basketball,Sport
+baton,Sport
 biathlon,Sport
 bobsleigh,Sport
 boxe,Sport
+cage,Sport
 canoë,Sport
+chronometre,Sport
 corde,Sport
 course,Sport
 cricket,Sport
+cross,Sport
 curling,Sport
 cyclisme,Sport
 danse,Sport
-descente,Sport
 décathlon,Sport
+descente,Sport
+dojo,Sport
 dressage,Sport
+endurance,Sport
+epee,Sport
+epreuve,Sport
+équitation,Sport
 escalade,Sport
 escrime,Sport
 esport,Sport
-équitation,Sport
 filet,Sport
+finale,Sport
 fleche,Sport
+fleuret,Sport
 football,Sport
 footing,Sport
 frisbee,Sport
 golf,Sport
+grade,Sport
 gymnastique,Sport
 haltère,Sport
 handball,Sport
 hockey,Sport
+ironman,Sport
+javelot,Sport
 jogging,Sport
 judo,Sport
 karaté,Sport
@@ -1087,87 +1278,130 @@ kayak,Sport
 luge,Sport
 lutte,Sport
 marathon,Sport
+match,Sport
+medaille,Sport
 motocross,Sport
 nage,Sport
 natation,Sport
+obstacle,Sport
 parachute,Sport
+parcours,Sport
 patin,Sport
 patinage,Sport
+pelote,Sport
+peloton,Sport
+pénalty,Sport
 pentathlon,Sport
 pétanque,Sport
 piscine,Sport
-plongeon,Sport
 plongée,Sport
+plongeon,Sport
+podium,Sport
 poids,Sport
 polo,Sport
+prolongation,Sport
 rafting,Sport
 rameur,Sport
 randonnée,Sport
 relais,Sport
 ring,Sport
+riposte,Sport
+rondelle,Sport
 rugby,Sport
+sabre,Sport
 saut,Sport
+score,Sport
+shooting,Sport
 skateboard,Sport
 ski,Sport
 slalom,Sport
 snowboard,Sport
 squash,Sport
+stade,Sport
+stamina,Sport
 sumo,Sport
 surf,Sport
+tackle,Sport
 taekwondo,Sport
 tennis,Sport
 tennis-de-table,Sport
+terrain,Sport
 tir,Sport
+titre,Sport
 trampoline,Sport
 triathlon,Sport
+trophee,Sport
+vainqueur,Sport
 velo,Sport
 voile,Sport
+volley,Sport
 volleyball,Sport
 wakeboard,Sport
 yoga,Sport
+algorithme,Technologie
 amperemetre,Technologie
 antenne,Technologie
 application,Technologie
+archivage,Technologie
 automate,Technologie
+automatisation,Technologie
 baladeur,Technologie
+binaire,Technologie
 bluetooth,Technologie
+boucle,Technologie
 boussole,Technologie
 brevet,Technologie
+cable,Technologie
 calculatrice,Technologie
-camescope,Technologie
 caméra,Technologie
+camescope,Technologie
 capteur,Technologie
 casque,Technologie
 circuit,Technologie
 clavier,Technologie
 code,Technologie
+compilation,Technologie
 condensateur,Technologie
+connexion,Technologie
 console,Technologie
 courant,Technologie
 cryptage,Technologie
+debug,Technologie
 decodeur,Technologie
+deploiement,Technologie
+detection,Technologie
 diode,Technologie
 disque,Technologie
+domotique,Technologie
 drone,Technologie
 ecouteur,Technologie
-electroaimant,Technologie
-encodage,Technologie
 écran,Technologie
 électricité,Technologie
+electroaimant,Technologie
 électronique,Technologie
+encodage,Technologie
+encryption,Technologie
 fibre,Technologie
+firmware,Technologie
 flash,Technologie
+fonction,Technologie
 frequence,Technologie
 fusée,Technologie
+hardware,Technologie
 hydraulique,Technologie
 imprimante,Technologie
+infonuage,Technologie
 informatique,Technologie
+intégration,Technologie
 interface,Technologie
 internet,Technologie
 invention,Technologie
+iteration,Technologie
 lecteur,Technologie
+licence,Technologie
 logiciel,Technologie
 logique,Technologie
+machine,Technologie
 magnetophone,Technologie
 mémoire,Technologie
 microchip,Technologie
@@ -1177,86 +1411,130 @@ moniteur,Technologie
 moteur,Technologie
 navigation,Technologie
 numérique,Technologie
+octet,Technologie
+opérateur,Technologie
 ordinateur,Technologie
 oscilloscope,Technologie
+pare-feu,Technologie
+patch,Technologie
 photocopie,Technologie
 photovoltaïque,Technologie
 pile,Technologie
+pixel,Technologie
+plateforme,Technologie
 processeur,Technologie
+programme,Technologie
 protocole,Technologie
+prototype,Technologie
 puce,Technologie
 radar,Technologie
 radio,Technologie
 recharge,Technologie
-resistance,Technologie
 réseau,Technologie
+reseau,Technologie
+resistance,Technologie
 robot,Technologie
 routeur,Technologie
 satellite,Technologie
 scanner,Technologie
+script,Technologie
 serveur,Technologie
 signal,Technologie
 simulateur,Technologie
+simulation,Technologie
 smartphone,Technologie
 software,Technologie
 sonde,Technologie
+stockage,Technologie
+streaming,Technologie
+systeme,Technologie
 tablette,Technologie
 telemetre,Technologie
 téléphone,Technologie
 télévision,Technologie
+terminal,Technologie
 thermostat,Technologie
 transformateur,Technologie
 transistor,Technologie
+variable,Technologie
+version,Technologie
 voltmetre,Technologie
+webcam,Technologie
 wifi,Technologie
 aéroglisseur,Véhicule
+aeronef,Véhicule
 ambulance,Véhicule
+amphibie,Véhicule
 autobus,Véhicule
 autocar,Véhicule
 avion,Véhicule
+bac,Véhicule
 ballon,Véhicule
 barge,Véhicule
 bateau,Véhicule
 berline,Véhicule
 bicyclette,Véhicule
+bolide,Véhicule
 brouette,Véhicule
+buggy,Véhicule
 bulldozer,Véhicule
 bus,Véhicule
+cabine,Véhicule
 caleche,Véhicule
 camion,Véhicule
 camionnette,Véhicule
+capsule,Véhicule
 caravane,Véhicule
 cargo,Véhicule
 catamaran,Véhicule
 chaland,Véhicule
+char,Véhicule
 charette,Véhicule
 chariot,Véhicule
+charrue,Véhicule
+chenille,Véhicule
 citerne,Véhicule
+clipper,Véhicule
+convoi,Véhicule
 corbillard,Véhicule
+corvette,Véhicule
 croiseur,Véhicule
+cyclomoteur,Véhicule
+deltaplane,Véhicule
 deux-roues,Véhicule
 diligence,Véhicule
 dirigeable,Véhicule
+doris,Véhicule
+draisine,Véhicule
 drakkar,Véhicule
 embarcation,Véhicule
 ferry,Véhicule
+fiacre,Véhicule
 fourgon,Véhicule
+fourgonnette,Véhicule
 frégate,Véhicule
 funiculaire,Véhicule
+galere,Véhicule
 gondole,Véhicule
 hélicoptère,Véhicule
 hors-bord,Véhicule
+hydravion,Véhicule
 hydroglisseur,Véhicule
 jet,Véhicule
+joncque,Véhicule
 kart,Véhicule
 locomotive,Véhicule
 longboard,Véhicule
 métro,Véhicule
+mobylette,Véhicule
+module,Véhicule
 monorail,Véhicule
 moto,Véhicule
 motoneige,Véhicule
+nacelle,Véhicule
 navette,Véhicule
 navire,Véhicule
+nef,Véhicule
 omnibus,Véhicule
 paquebot,Véhicule
 patinette,Véhicule
@@ -1268,36 +1546,54 @@ ponton,Véhicule
 pousse-pousse,Véhicule
 quad,Véhicule
 radeau,Véhicule
+rame,Véhicule
 remorque,Véhicule
 remorqueur,Véhicule
+sampan,Véhicule
 scooter,Véhicule
+sidecar,Véhicule
+skiff,Véhicule
 sloop,Véhicule
+solex,Véhicule
 sous-marin,Véhicule
+spoutnik,Véhicule
+steamer,Véhicule
+tandem,Véhicule
 tanker,Véhicule
 taxi,Véhicule
 telecabine,Véhicule
 telepherique,Véhicule
+tender,Véhicule
 TGV,Véhicule
+torpille,Véhicule
 tracteur,Véhicule
 traineau,Véhicule
 tram,Véhicule
 tramway,Véhicule
 tricycle,Véhicule
 trottinette,Véhicule
+utilitaire,Véhicule
 van,Véhicule
 vespa,Véhicule
 voilier,Véhicule
 voiture,Véhicule
+voiturette,Véhicule
+wagon,Véhicule
 yacht,Véhicule
+zeppelin,Véhicule
 anorak,Vêtement
 baskets,Vêtement
 béret,Vêtement
+bikini,Vêtement
 blazer,Vêtement
 blouson,Vêtement
 bonnet,Vêtement
 botte,Vêtement
 bouton,Vêtement
+brassière,Vêtement
 bretelle,Vêtement
+burnous,Vêtement
+cache-col,Vêtement
 cagoule,Vêtement
 calecon,Vêtement
 cardigan,Vêtement
@@ -1309,6 +1605,7 @@ chaussette,Vêtement
 chaussure,Vêtement
 chemise,Vêtement
 chemisier,Vêtement
+cintre,Vêtement
 ciré,Vêtement
 col,Vêtement
 collant,Vêtement
@@ -1317,39 +1614,51 @@ corset,Vêtement
 costume,Vêtement
 coton,Vêtement
 cravate,Vêtement
+cuir,Vêtement
 culotte,Vêtement
+débardeur,Vêtement
+décolleté,Vêtement
 denim,Vêtement
 dentelle,Vêtement
-débardeur,Vêtement
+djellaba,Vêtement
+duvet,Vêtement
+écharpe,Vêtement
 ensemble,Vêtement
 espadrille,Vêtement
 etole,Vêtement
-écharpe,Vêtement
 foulard,Vêtement
 fourrure,Vêtement
+gabardine,Vêtement
 gant,Vêtement
 gilet,Vêtement
 guetres,Vêtement
+hoodie,Vêtement
 imperméable,Vêtement
 jean,Vêtement
 jupe,Vêtement
 kimono,Vêtement
+lainage,Vêtement
 laine,Vêtement
 legging,Vêtement
 lin,Vêtement
+lingerie,Vêtement
+livrée,Vêtement
 maillot,Vêtement
+manche,Vêtement
 manchon,Vêtement
 manteau,Vêtement
 mariniere,Vêtement
 mitaine,Vêtement
 moufle,Vêtement
-nylon,Vêtement
+mousseline,Vêtement
 nœud,Vêtement
+nylon,Vêtement
 pantalon,Vêtement
 pardessus,Vêtement
 pareo,Vêtement
 parka,Vêtement
 peignoir,Vêtement
+pelisse,Vêtement
 polyester,Vêtement
 poncho,Vêtement
 pull,Vêtement
@@ -1362,20 +1671,27 @@ saharienne,Vêtement
 salopette,Vêtement
 sandale,Vêtement
 sari,Vêtement
+sarrau,Vêtement
 satin,Vêtement
 short,Vêtement
 smoking,Vêtement
 socquette,Vêtement
 soie,Vêtement
+soutane,Vêtement
+spencer,Vêtement
 survetement,Vêtement
 sweat,Vêtement
 tablier,Vêtement
+tailleur,Vêtement
+tartan,Vêtement
 toge,Vêtement
 treillis,Vêtement
 tricot,Vêtement
 tunique,Vêtement
 turban,Vêtement
+tutu,Vêtement
 uniforme,Vêtement
 velours,Vêtement
 veste,Vêtement
 veston,Vêtement
+wax,Vêtement
