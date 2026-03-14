@@ -1,6 +1,6 @@
 ---
 title: Score composite de difficulté — Standards de l'industrie
-version: 2.0
+version: 2.1
 date: 2026-03-14
 status: approved
 llm-context: >
@@ -237,6 +237,32 @@ src/lib/difficulty-config.ts ─────────────┤
 ```
 
 Le check de fraîcheur utilise `scripts/source-hash.ts` — source unique pour la liste des fichiers surveillés (`SOURCE_FILES`). Le hash couvre : `words.ts`, `letter-frequencies.ts`, `bigram-frequencies.ts`, `word-frequencies.ts`, `difficulty-config.ts`, `lexique3-top10k.csv`.
+
+---
+
+## Données de référence
+
+### Lexique 383
+
+- **Source** : http://www.lexique.org/databases/Lexique383/Lexique383.tsv (142 695 entrées)
+- **Licence** : CC BY-SA 4.0
+- **Citation** : New, Pallier, Brysbaert, Ferrand (2004) Lexique 2
+- **Colonnes utilisées** : `ortho` (col 1) = mot, `freqlivres` (col 10) = fréquence par million dans les livres
+- **Fichier local** : `data/lexique3-top10k.csv` — top 10 000 mots par freqlivres + 65 mots de jeu sous le seuil top 10k (10 066 entrées total)
+- **Mots absents de Lexique** : 12 noms propres/anglicismes (basketball, volleyball, France, Australie, Égypte, Islande, Mexique, Norvège, Portugal, Tokyo, Marseille, Berlin) → freq=0, scorés comme rares
+
+### Vérification des catégories
+
+Les 120 mots ont été vérifiés contre l'API Wiktionnaire FR (`/w/api.php?action=query&titles={word}&prop=categories`). Mots ambigus identifiés et correctement désambiguïsés par le hint de catégorie :
+
+| Mot | Catégorie app | Sens alternatifs | Désambiguïsation |
+|-----|--------------|-----------------|------------------|
+| avocat | Métier | Fruit (Wiktionary: "Fruits en français") | Hint "Métier" en mode easy/normal |
+| orange | Fruit | Couleur (Wiktionary: "Adjectifs en français") | Hint "Fruit" |
+| glacier | Nature | Vendeur de glaces | Hint "Nature" |
+| aurore | Nature | Prénom, couleur | Hint "Nature" |
+| pilote | Métier | Automobile, forme verbale | Hint "Métier" |
+| cascade | Nature | Cinéma, jonglerie | Hint "Nature" |
 
 ---
 
