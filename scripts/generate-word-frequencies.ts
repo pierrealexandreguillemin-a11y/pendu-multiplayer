@@ -11,6 +11,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { normalizeForLookup } from '../src/lib/normalize';
+import { parseWordsCsv } from './parse-words-csv';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const CSV_PATH = path.join(PROJECT_ROOT, 'data/lexique3-top10k.csv');
@@ -43,14 +44,8 @@ function main() {
 
   console.log(`Loaded ${freqMap.size} words from CSV (maxFreq=${maxFreq})`);
 
-  // 2. Read game words
-  const wordsContent = fs.readFileSync(path.join(PROJECT_ROOT, 'src/lib/words.ts'), 'utf-8');
-  const wordRegex = /word:\s*'([^']+)'/g;
-  const gameWords: string[] = [];
-  let match;
-  while ((match = wordRegex.exec(wordsContent)) !== null) {
-    gameWords.push(match[1]!);
-  }
+  // 2. Read game words from CSV
+  const gameWords = parseWordsCsv(PROJECT_ROOT).map((e) => e.word);
 
   console.log(`Found ${gameWords.length} game words`);
 
