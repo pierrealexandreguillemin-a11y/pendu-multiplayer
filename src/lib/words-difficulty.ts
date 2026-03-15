@@ -7,6 +7,7 @@
 
 import type { DifficultyLevel } from '@/types/difficulty';
 import type { WordEntry } from '@/types/word';
+import type { WordCategory } from './categories';
 import { WORD_CLASSIFICATIONS, type ClassifiedWordEntry } from './word-classifications';
 
 export interface ClassifiedWord extends WordEntry {
@@ -23,8 +24,15 @@ export const CLASSIFIED_WORDS: ClassifiedWord[] = WORD_CLASSIFICATIONS.map(
   })
 );
 
-export function getWordsByDifficulty(difficulty: DifficultyLevel): ClassifiedWord[] {
-  return CLASSIFIED_WORDS.filter((w) => w.difficulty === difficulty);
+export function getWordsByDifficulty(
+  difficulty: DifficultyLevel,
+  category?: WordCategory | null
+): ClassifiedWord[] {
+  let words = CLASSIFIED_WORDS.filter((w) => w.difficulty === difficulty);
+  if (category) {
+    words = words.filter((w) => w.category === category);
+  }
+  return words;
 }
 
 export function getRandomWordByDifficulty(

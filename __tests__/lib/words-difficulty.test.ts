@@ -41,6 +41,24 @@ describe('words-difficulty', () => {
       expect(hardWords.every((w) => w.difficulty === 'hard')).toBe(true);
     });
 
+    it('should filter by category when provided', () => {
+      const animals = getWordsByDifficulty('easy', 'Animal');
+      expect(animals.length).toBeGreaterThan(0);
+      expect(animals.every((w) => w.category === 'Animal')).toBe(true);
+    });
+
+    it('should return all categories when category is null', () => {
+      const all = getWordsByDifficulty('easy', null);
+      const categories = new Set(all.map((w) => w.category));
+      expect(categories.size).toBeGreaterThan(1);
+    });
+
+    it('should return all categories when category is undefined', () => {
+      const all = getWordsByDifficulty('easy');
+      const withNull = getWordsByDifficulty('easy', null);
+      expect(all.length).toBe(withNull.length);
+    });
+
     it('should return non-empty arrays for each difficulty', () => {
       expect(getWordsByDifficulty('easy').length).toBeGreaterThan(0);
       expect(getWordsByDifficulty('normal').length).toBeGreaterThan(0);
