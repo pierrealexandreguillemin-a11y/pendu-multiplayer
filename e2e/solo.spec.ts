@@ -77,4 +77,18 @@ test.describe('Solo Mode', () => {
     // Balloons should be visible
     await expect(page.getByRole('img', { name: /ballon/i })).toBeVisible({ timeout: 5000 });
   });
+
+  test('should display category selector', async ({ page }) => {
+    const categoryGroup = page.getByRole('radiogroup', { name: /catégorie/i });
+    await expect(categoryGroup).toBeVisible();
+    await expect(page.getByRole('radio', { name: /toutes/i })).toBeVisible();
+    await expect(page.getByRole('radio', { name: /animal/i })).toBeVisible();
+  });
+
+  test('should allow selecting a category before starting', async ({ page }) => {
+    await page.getByRole('radio', { name: /animal/i }).click();
+    await page.getByPlaceholder(/ex.*marie/i).fill('CatTest');
+    await page.getByRole('button', { name: /commencer/i }).click();
+    await expect(page.getByRole('group', { name: /clavier/i })).toBeVisible({ timeout: 5000 });
+  });
 });
