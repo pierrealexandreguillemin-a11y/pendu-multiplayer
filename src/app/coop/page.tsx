@@ -53,6 +53,8 @@ function CoopContent() {
           onJoinIdChange={session.setJoinId}
           onCreateRoom={session.createRoom}
           onJoinRoom={session.joinRoom}
+          selectedCategory={session.selectedCategory}
+          onCategoryChange={session.setSelectedCategory}
         />
       )}
 

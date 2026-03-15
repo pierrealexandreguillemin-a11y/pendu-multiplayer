@@ -10,9 +10,11 @@ import { useState, useEffect, useRef } from 'react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useLeaderboardStore } from '@/stores/leaderboard';
+import { useDifficultyStore } from '@/stores/difficulty';
 import { calculateScore } from '@/lib/game-engine';
 import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import { MAX_PLAYERS } from '@/types/room';
+import type { WordCategory } from '@/lib/categories';
 import { useCoopRoom } from './useCoopRoom';
 import { useCoopEffects } from './useCoopEffects';
 import { useCoopCallbacks } from './useCoopCallbacks';
@@ -28,9 +30,11 @@ interface UseCoopSessionOptions {
 export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessionOptions) {
   const [phase, setPhase] = useState<CoopPhase>('lobby');
   const [joinId, setJoinId] = useState(initialJoinId);
+  const [selectedCategory, setSelectedCategory] = useState<WordCategory | null>(null);
   const peer = usePeerConnection();
   const game = useGameLogic();
   const { addEntry } = useLeaderboardStore();
+  const { level: storeDifficulty } = useDifficultyStore();
   const room = useCoopRoom(peer);
   const {
     players,
@@ -106,6 +110,8 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     startBroadcastSentRef,
     hasRecordedRef,
     advanceTurn,
+    selectedCategory,
+    difficulty: storeDifficulty,
   });
 
   return {
@@ -128,6 +134,8 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
     sessionScore,
     wordsWon,
     wordScore,
+    selectedCategory,
+    setSelectedCategory,
     ...callbacks,
   };
 }
