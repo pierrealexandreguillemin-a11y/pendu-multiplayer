@@ -78,15 +78,14 @@ test.describe('Solo Mode', () => {
     await expect(page.getByRole('img', { name: /ballon/i })).toBeVisible({ timeout: 5000 });
   });
 
-  // TODO: unskip after first deploy with CategorySelector
-  test.skip('should display category selector', async ({ page }) => {
+  test('should display category selector', async ({ page }) => {
     const categoryGroup = page.getByRole('radiogroup', { name: /catégorie/i });
     await expect(categoryGroup).toBeVisible();
     await expect(page.getByRole('radio', { name: /toutes/i })).toBeVisible();
     await expect(page.getByRole('radio', { name: /animal/i })).toBeVisible();
   });
 
-  test.skip('should allow selecting a category before starting', async ({ page }) => {
+  test('should allow selecting a category before starting', async ({ page }) => {
     await page.getByRole('radio', { name: /animal/i }).click();
     await page.getByPlaceholder(/ex.*marie/i).fill('CatTest');
     await page.getByRole('button', { name: /commencer/i }).click();

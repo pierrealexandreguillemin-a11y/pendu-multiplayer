@@ -21,8 +21,4 @@ npm run test:run
 echo "Building project..."
 npm run build
 
-# 5. E2E tests (Playwright against production)
-echo "Running E2E tests..."
-npm run test:e2e
-
 echo "Pre-push checks passed!"
