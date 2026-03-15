@@ -15,14 +15,27 @@ const REPO_URL = 'github.com/pierrealexandreguillemin-a11y/pendu-multiplayer';
 
 export function ConsoleBanner() {
   useEffect(() => {
-    const accent =
-      getComputedStyle(document.documentElement).getPropertyValue('--chart-1').trim() ||
-      'oklch(0.646 0.222 41.116)';
+    const s = getComputedStyle(document.documentElement);
+    const a = s.getPropertyValue('--chart-1').trim() || 'oklch(0.646 0.222 41.116)';
+    const b = s.getPropertyValue('--chart-2').trim() || a;
 
-    console.log(`%c\n${ASCII_BANNER}\n`, `color:${accent};font-family:monospace;`);
+    console.log(
+      `%c\n${ASCII_BANNER}\n`,
+      'background:linear-gradient(135deg,' +
+        a +
+        ',' +
+        b +
+        ');' +
+        '-webkit-background-clip:text;' +
+        '-webkit-text-fill-color:transparent;' +
+        'color:' +
+        a +
+        ';' +
+        'font-family:monospace;font-size:14px;line-height:1.4;'
+    );
     console.log(
       '%c Pendu Multijoueur — par P-A.G ',
-      `background:${accent};color:oklch(0.95 0 0);padding:6px 12px;border-radius:4px;font-weight:bold;font-family:monospace;`
+      `background:${a};color:oklch(0.95 0 0);padding:6px 12px;border-radius:4px;font-weight:bold;font-family:monospace;`
     );
     console.log(
       `%c Curieux ? Le code est open-source → ${REPO_URL} `,
