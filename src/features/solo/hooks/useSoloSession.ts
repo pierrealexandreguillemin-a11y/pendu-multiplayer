@@ -14,6 +14,7 @@ import { useDifficultyStore, useDifficultyConfig } from '@/stores/difficulty';
 import { calculateScore } from '@/lib/game-engine';
 import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import { getRandomWordByDifficulty } from '@/lib/words-difficulty';
+import type { WordCategory } from '@/lib/categories';
 
 interface UseSoloSessionOptions {
   playerName: string;
@@ -28,6 +29,7 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
 
   const [sessionScore, setSessionScore] = useState(0);
   const [wordsWon, setWordsWon] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<WordCategory | null>(null);
   const hasRecordedRef = useRef(false);
 
   // ISO/IEC 25010 - Apply difficulty multiplier to displayed word score
@@ -62,21 +64,25 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
   ]);
 
   // Start a new session with fresh word selection
-  const startSession = useCallback(() => {
-    setSessionScore(0);
-    setWordsWon(0);
-    hasRecordedRef.current = false;
-    sessionMemory.reset();
+  const startSession = useCallback(
+    (category?: WordCategory | null) => {
+      setSessionScore(0);
+      setWordsWon(0);
+      hasRecordedRef.current = false;
+      sessionMemory.reset();
+      setSelectedCategory(category ?? null);
 
-    // Get word based on difficulty (no repetition via session memory)
-    const wordEntry = getRandomWordByDifficulty(difficulty, sessionMemory.usedWords);
-    if (wordEntry) {
-      startGame(wordEntry.word, wordEntry.category, difficulty);
-    } else {
-      // Fallback if no words for difficulty (shouldn't happen)
-      startGame(undefined, undefined, difficulty);
-    }
-  }, [startGame, sessionMemory, difficulty]);
+      // Get word based on difficulty (no repetition via session memory)
+      const wordEntry = getRandomWordByDifficulty(difficulty, sessionMemory.usedWords, category);
+      if (wordEntry) {
+        startGame(wordEntry.word, wordEntry.category, difficulty);
+      } else {
+        // Fallback if no words for difficulty (shouldn't happen)
+        startGame(undefined, undefined, difficulty);
+      }
+    },
+    [startGame, sessionMemory, difficulty]
+  );
 
   // Continue session with next word
   // ISO/IEC 25010 - Functional Suitability: Apply difficulty multiplier to score
@@ -89,18 +95,22 @@ export function useSoloSession({ playerName }: UseSoloSessionOptions) {
     }
 
     // Get next word (no repetition)
-    const wordEntry = getRandomWordByDifficulty(difficulty, sessionMemory.usedWords);
+    const wordEntry = getRandomWordByDifficulty(
+      difficulty,
+      sessionMemory.usedWords,
+      selectedCategory
+    );
     if (wordEntry) {
       startGame(wordEntry.word, wordEntry.category, difficulty);
     } else {
       // All words used - reset and continue
       sessionMemory.reset();
-      const resetWord = getRandomWordByDifficulty(difficulty);
+      const resetWord = getRandomWordByDifficulty(difficulty, undefined, selectedCategory);
       if (resetWord) {
         startGame(resetWord.word, resetWord.category, difficulty);
       }
     }
-  }, [gameState, startGame, sessionMemory, difficulty]);
+  }, [gameState, startGame, sessionMemory, difficulty, selectedCategory]);
 
   const endSession = useCallback(() => {
     hasRecordedRef.current = false;
