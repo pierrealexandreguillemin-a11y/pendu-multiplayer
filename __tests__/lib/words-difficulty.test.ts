@@ -6,7 +6,9 @@ import {
   getRandomWordByDifficulty,
   getDifficultyStats,
   hasWordsForDifficulty,
+  getWordCountByCategory,
 } from '@/lib/words-difficulty';
+import { VALID_CATEGORIES } from '@/lib/categories';
 import { computeDifficultyScore } from '@/lib/difficulty-scorer';
 import type { DifficultyLevel } from '@/types/difficulty';
 
@@ -190,6 +192,30 @@ describe('words-difficulty', () => {
 
     it('should be backward compatible without category', () => {
       expect(hasWordsForDifficulty('easy')).toBe(true);
+    });
+  });
+
+  describe('getWordCountByCategory', () => {
+    it('should return counts for all 15 categories', () => {
+      const counts = getWordCountByCategory();
+      expect(Object.keys(counts).length).toBe(15);
+      for (const cat of VALID_CATEGORIES) {
+        expect(counts[cat]).toBeGreaterThan(0);
+      }
+    });
+
+    it('should return filtered counts when difficulty provided', () => {
+      const allCounts = getWordCountByCategory();
+      const easyCounts = getWordCountByCategory('easy');
+      for (const cat of VALID_CATEGORIES) {
+        expect(easyCounts[cat]).toBeLessThanOrEqual(allCounts[cat]);
+      }
+    });
+
+    it('should have total matching CLASSIFIED_WORDS length', () => {
+      const counts = getWordCountByCategory();
+      const total = Object.values(counts).reduce((sum, n) => sum + n, 0);
+      expect(total).toBe(CLASSIFIED_WORDS.length);
     });
   });
 

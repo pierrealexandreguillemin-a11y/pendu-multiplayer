@@ -7,7 +7,7 @@
 
 import type { DifficultyLevel } from '@/types/difficulty';
 import type { WordEntry } from '@/types/word';
-import type { WordCategory } from './categories';
+import { VALID_CATEGORIES, type WordCategory } from './categories';
 import { WORD_CLASSIFICATIONS, type ClassifiedWordEntry } from './word-classifications';
 
 export interface ClassifiedWord extends WordEntry {
@@ -80,4 +80,22 @@ export function hasWordsForDifficulty(
   const candidates = getWordsByDifficulty(difficulty, category);
   if (!usedWords || usedWords.size === 0) return candidates.length > 0;
   return candidates.some((w) => !usedWords.has(w.word.toUpperCase()));
+}
+
+export function getWordCountByCategory(difficulty?: DifficultyLevel): Record<WordCategory, number> {
+  const counts = Object.fromEntries(VALID_CATEGORIES.map((cat) => [cat, 0])) as Record<
+    WordCategory,
+    number
+  >;
+
+  const words = difficulty
+    ? CLASSIFIED_WORDS.filter((w) => w.difficulty === difficulty)
+    : CLASSIFIED_WORDS;
+
+  for (const w of words) {
+    if (VALID_CATEGORIES.includes(w.category as WordCategory)) {
+      counts[w.category as WordCategory]++;
+    }
+  }
+  return counts;
 }
