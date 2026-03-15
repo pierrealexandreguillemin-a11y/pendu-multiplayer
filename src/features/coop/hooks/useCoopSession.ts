@@ -6,7 +6,7 @@
  * Supports up to 6 players with turn-based guessing
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { usePeerConnection } from '@/hooks/usePeerConnection';
 import { useGameLogic } from '@/hooks/useGameLogic';
 import { useLeaderboardStore } from '@/stores/leaderboard';
@@ -16,9 +16,9 @@ import { calculateDifficultyScore } from '@/lib/difficulty-config';
 import { MAX_PLAYERS } from '@/types/room';
 import type { WordCategory } from '@/lib/categories';
 import { useCoopRoom } from './useCoopRoom';
+import { useCoopRefs } from './useCoopRefs';
 import { useCoopEffects } from './useCoopEffects';
 import { useCoopCallbacks } from './useCoopCallbacks';
-import type { CoopRefs } from './useCoopMessageHandler';
 
 export type CoopPhase = 'lobby' | 'waiting' | 'playing';
 
@@ -50,26 +50,7 @@ export function useCoopSession({ playerName, initialJoinId = '' }: UseCoopSessio
   const hasRecordedRef = useRef(false);
   const startBroadcastSentRef = useRef(false);
 
-  const gameRef = useRef(game);
-  const phaseRef = useRef(phase);
-  const playersRef = useRef(players);
-  const currentTurnIndexRef = useRef(currentTurnIndex);
-  useEffect(() => {
-    gameRef.current = game;
-    phaseRef.current = phase;
-  }, [game, phase]);
-  useEffect(() => {
-    playersRef.current = players;
-    currentTurnIndexRef.current = currentTurnIndex;
-  }, [players, currentTurnIndex]);
-
-  const refs: CoopRefs = {
-    gameRef,
-    phaseRef,
-    playersRef,
-    currentTurnIndexRef,
-    startBroadcastSentRef,
-  };
+  const refs = useCoopRefs({ game, phase, players, currentTurnIndex, startBroadcastSentRef });
   const difficulty = game.gameState?.difficulty ?? 'normal';
   const wordScore = game.gameState
     ? calculateDifficultyScore(calculateScore(game.gameState.word), difficulty)
