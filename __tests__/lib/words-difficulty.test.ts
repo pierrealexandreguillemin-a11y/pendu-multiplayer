@@ -165,6 +165,34 @@ describe('words-difficulty', () => {
     });
   });
 
+  describe('getRandomWordByDifficulty with category', () => {
+    it('should return word from specified category', () => {
+      const word = getRandomWordByDifficulty('normal', new Set(), 'Sport');
+      expect(word).not.toBeNull();
+      expect(word!.category).toBe('Sport');
+    });
+
+    it('should return any word when category is null', () => {
+      const word = getRandomWordByDifficulty('normal', new Set(), null);
+      expect(word).not.toBeNull();
+    });
+
+    it('should be backward compatible without category', () => {
+      const word = getRandomWordByDifficulty('easy');
+      expect(word).not.toBeNull();
+    });
+  });
+
+  describe('hasWordsForDifficulty with category', () => {
+    it('should return true for populated category', () => {
+      expect(hasWordsForDifficulty('easy', new Set(), 'Animal')).toBe(true);
+    });
+
+    it('should be backward compatible without category', () => {
+      expect(hasWordsForDifficulty('easy')).toBe(true);
+    });
+  });
+
   describe('computeDifficultyScore (via difficulty-scorer)', () => {
     it('should return breakdown with all criteria', () => {
       const b = computeDifficultyScore('pomme');

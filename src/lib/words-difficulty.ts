@@ -37,9 +37,10 @@ export function getWordsByDifficulty(
 
 export function getRandomWordByDifficulty(
   difficulty: DifficultyLevel,
-  usedWords?: ReadonlySet<string>
+  usedWords?: ReadonlySet<string>,
+  category?: WordCategory | null
 ): WordEntry | null {
-  let candidates = getWordsByDifficulty(difficulty);
+  let candidates = getWordsByDifficulty(difficulty, category);
   if (usedWords && usedWords.size > 0) {
     candidates = candidates.filter((w) => !usedWords.has(w.word.toUpperCase()));
   }
@@ -73,9 +74,10 @@ export function getDifficultyStats(): Record<
 
 export function hasWordsForDifficulty(
   difficulty: DifficultyLevel,
-  usedWords?: ReadonlySet<string>
+  usedWords?: ReadonlySet<string>,
+  category?: WordCategory | null
 ): boolean {
-  const candidates = getWordsByDifficulty(difficulty);
+  const candidates = getWordsByDifficulty(difficulty, category);
   if (!usedWords || usedWords.size === 0) return candidates.length > 0;
   return candidates.some((w) => !usedWords.has(w.word.toUpperCase()));
 }
