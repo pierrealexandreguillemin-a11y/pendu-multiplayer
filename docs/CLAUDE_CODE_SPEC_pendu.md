@@ -1,6 +1,6 @@
 # Pendu Multijoueur PWA - Specification Claude Code
 
-> **Version**: 1.1 | **Date**: 2026-02-21 (mise a jour post-implementation)
+> **Version**: 2.0 | **Date**: 2026-03-15 (post word expansion 1696 mots)
 > **Contexte**: Jeu P2P WebRTC - PWA sur Vercel + PeerJS Cloud signaling
 > **Developpeur**: Debutant-friendly, vibe coding
 > **Inspire de**: Standards ISO/IEC 25010, 29119, 5055 (version allegee)
@@ -215,7 +215,7 @@ pendu/
 │                     Vitest + Testing Library             │
 ├─────────────────────────────────────────────────────────┤
 │  UNIT (65%)         game-engine ~91%, difficulty 100%   │
-│                     106 tests, pure functions            │
+│                     155 tests, pure functions            │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -382,6 +382,8 @@ npm run build
 [x] Phase 5: Mode Coop - /coop, 2-6 joueurs, tours
 [x] Phase 6: Mode PvP - /pvp, host choisit mot, guests devinent
 [x] Phase 7: PWA + Deploy - manifest.json, icons, Vercel production
+[x] Phase 8: Scoring composite - 6 critères, seuils calibrés, scripts génération
+[x] Phase 9: Expansion corpus - 1696 mots, 15 catégories, CSV source, DRY
 ```
 
 ---
@@ -441,6 +443,126 @@ docs(readme): add deployment instructions
 
 ---
 
+## 🗺️ Roadmap — Prochaines features
+
+### Feature 1 : Filtre par catégorie (UI)
+
+**Objectif :** Permettre au joueur de choisir une catégorie avant de lancer une partie (solo/coop).
+
+**Périmètre :**
+- Sélecteur de catégorie sur l'écran de démarrage (dropdown ou grille de boutons)
+- Option "Toutes" par défaut (comportement actuel)
+- Filtrage dans `getRandomWordByDifficulty()` : ajouter un paramètre `category?: WordCategory`
+- Affichage du nombre de mots disponibles par catégorie dans le sélecteur
+- Les 15 catégories importées depuis `src/lib/categories.ts` (VALID_CATEGORIES)
+
+**Impact :** UX, rejouabilité — le joueur cible ses thèmes préférés ou entraîne ses lacunes.
+
+**Fichiers concernés :**
+- `src/lib/words-difficulty.ts` — ajouter filtre catégorie à `getRandomWordByDifficulty()`
+- `src/features/solo/components/SoloStartScreen.tsx` — UI sélecteur
+- `src/features/solo/hooks/useSoloSession.ts` — passer la catégorie sélectionnée
+- `src/features/coop/hooks/useCoopSession.ts` — idem pour coop
+- `__tests__/lib/words-difficulty.test.ts` — tests filtre catégorie
+
+---
+
+### Feature 2 : Page "Comment ça marche" (scoring pédagogique)
+
+**Objectif :** Expliquer au joueur comment la difficulté est calculée (les 6 critères, exemples concrets).
+
+**Périmètre :**
+- Nouvelle route `/about` ou modal accessible depuis le menu
+- Contenu basé sur `docs/superpowers/specs/2026-03-14-composite-difficulty-scoring-design.md` (sections "Les 6 critères", "Seuils", "Exemples concrets")
+- Visualisation interactive : entrer un mot → voir le breakdown des 6 sous-scores
+- Utiliser `computeDifficultyScore()` de `src/lib/difficulty-scorer.ts` pour le calcul live
+- Design cohérent avec le glassmorphism existant
+
+**Impact :** Pédagogique — transparence sur le scoring, valeur ajoutée pour les joueurs curieux.
+
+**Fichiers concernés :**
+- `src/app/about/page.tsx` — nouvelle page
+- `src/components/game/ScoreBreakdown.tsx` — composant visualisation
+- `src/lib/difficulty-scorer.ts` — déjà existant, API publique `computeDifficultyScore()`
+
+---
+
+### Feature 3 : Statistiques joueur
+
+**Objectif :** Historique des performances par catégorie et difficulté (victoires, défaites, taux de réussite).
+
+**Périmètre :**
+- Stockage localStorage (comme le leaderboard actuel)
+- Stats par catégorie : parties jouées, victoires, taux de réussite
+- Stats par difficulté : easy/normal/hard séparément
+- Stats globales : série en cours (streak), meilleure série
+- UI : page `/stats` ou section dans le profil joueur
+- Reset possible des statistiques
+
+**Impact :** Engagement — le joueur voit sa progression et ses points faibles.
+
+**Fichiers concernés :**
+- `src/stores/player-stats.ts` — nouveau store Zustand + localStorage
+- `src/types/stats.ts` — types pour les statistiques
+- `src/app/stats/page.tsx` — page statistiques
+- `src/features/solo/hooks/useSoloSession.ts` — enregistrer résultat en fin de partie
+
+---
+
+### Feature 4 : Mode thématique
+
+**Objectif :** Partie centrée sur une seule catégorie (enchaîner les mots d'un même thème) vs le mode mixte actuel.
+
+**Périmètre :**
+- Choix au démarrage : "Mode mixte" (toutes catégories, actuel) vs "Mode thématique" (une catégorie)
+- En mode thématique : les mots viennent tous de la catégorie choisie
+- Compteur de progression : "Mot 7/100 — Animal"
+- Bonus de score pour les séries thématiques (optionnel)
+- Dépend de la Feature 1 (filtre par catégorie)
+
+**Impact :** Gameplay — variante éducative, défi de compléter une catégorie entière.
+
+**Fichiers concernés :**
+- `src/features/solo/hooks/useSoloSession.ts` — mode thématique avec compteur
+- `src/features/solo/components/SoloStartScreen.tsx` — choix du mode
+- `src/lib/session-memory.ts` — tracking par catégorie
+
+---
+
+### Feature 5 : PWA offline
+
+**Objectif :** Jouer en solo hors connexion (avion, métro, zones blanches).
+
+**Périmètre :**
+- Service worker pour cache des assets statiques (HTML, CSS, JS, sons, icônes)
+- Les 1696 mots sont déjà dans le bundle JS (word-classifications.ts est statique) — pas de fetch API
+- Le scoring est pré-calculé — zéro dépendance réseau en solo
+- Seul le mode solo fonctionne offline (coop/pvp nécessitent PeerJS Cloud)
+- Indicateur UI : "Mode hors ligne" quand pas de réseau
+- Leaderboard local fonctionne déjà en localStorage — sync cloud au retour en ligne
+
+**Impact :** Technique — expérience complète en solo sans réseau.
+
+**Fichiers concernés :**
+- `public/sw.js` ou next-pwa — service worker
+- `src/app/layout.tsx` — enregistrement service worker
+- `src/hooks/useOnlineStatus.ts` — détection réseau
+- `src/components/ui/OfflineIndicator.tsx` — UI indicateur
+
+---
+
+### Ordre recommandé
+
+```
+Feature 1 (filtre catégorie) → Feature 4 (mode thématique) → Feature 3 (stats)
+                              → Feature 2 (page scoring)
+Feature 5 (PWA offline) — indépendant, faisable à tout moment
+```
+
+Feature 1 est le prérequis de Feature 4. Les autres sont indépendantes.
+
+---
+
 ## 📚 Ressources
 
 - [Next.js App Router](https://nextjs.org/docs/app)
@@ -452,5 +574,5 @@ docs(readme): add deployment instructions
 
 ---
 
-**Derniere maj**: 2026-02-21
+**Derniere maj**: 2026-03-15
 **Developpe avec Claude Code (Opus 4.6)**
