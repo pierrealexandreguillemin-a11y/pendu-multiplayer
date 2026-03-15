@@ -89,12 +89,11 @@ export function useCoopCallbacks(opts: CoopCallbacksOptions) {
     }
     hasRecordedRef.current = false;
     startBroadcastSentRef.current = false;
-    const continueDifficulty = game.gameState?.difficulty ?? difficulty;
-    const wordEntry = getRandomWordByDifficulty(continueDifficulty, undefined, selectedCategory);
+    const wordEntry = getRandomWordByDifficulty(difficulty, undefined, selectedCategory);
     if (wordEntry) {
-      game.startGame(wordEntry.word, wordEntry.category, continueDifficulty);
+      game.startGame(wordEntry.word, wordEntry.category, difficulty);
     } else {
-      game.startGame(undefined, undefined, continueDifficulty);
+      game.startGame(undefined, undefined, difficulty);
     }
   }, [
     game,

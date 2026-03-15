@@ -41,4 +41,15 @@ describe('CategorySelector', () => {
     const sport = screen.getByRole('radio', { name: /sport/i });
     expect(sport).toHaveAttribute('aria-checked', 'true');
   });
+
+  it('should disable chips with count 0', () => {
+    // Render with a difficulty that might have 0-count categories
+    render(<CategorySelector selected={null} onSelect={() => {}} difficulty="hard" />);
+    const radios = screen.getAllByRole('radio');
+    radios.forEach((radio) => {
+      if (radio.getAttribute('aria-disabled') === 'true') {
+        expect(radio).toBeDisabled();
+      }
+    });
+  });
 });

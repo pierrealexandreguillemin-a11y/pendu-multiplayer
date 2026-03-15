@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { GlassCard } from '@/components/effects/glass-card';
 import { PageTransition } from '@/components/effects/page-transition';
 import { CategorySelector } from '@/components/game/CategorySelector';
@@ -28,10 +28,12 @@ export function SoloStartScreen({
   const { level: difficulty } = useDifficultyStore();
 
   // Auto-clear category when it has 0 words for current difficulty
-  const effectiveCategory = useMemo(() => {
-    if (category === null) return null;
+  useEffect(() => {
+    if (category === null) return;
     const counts = getWordCountByCategory(difficulty);
-    return counts[category] === 0 ? null : category;
+    if (counts[category] === 0) {
+      queueMicrotask(() => setCategory(null));
+    }
   }, [difficulty, category]);
 
   const canStart = playerName.trim().length > 0;
@@ -64,14 +66,10 @@ export function SoloStartScreen({
 
           <DifficultySelector className="my-4" />
 
-          <CategorySelector
-            selected={effectiveCategory}
-            onSelect={setCategory}
-            difficulty={difficulty}
-          />
+          <CategorySelector selected={category} onSelect={setCategory} difficulty={difficulty} />
 
           <button
-            onClick={() => onStart(effectiveCategory)}
+            onClick={() => onStart(category)}
             disabled={!canStart}
             className="w-full py-4 px-6 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xl font-semibold rounded-xl transition-all"
           >

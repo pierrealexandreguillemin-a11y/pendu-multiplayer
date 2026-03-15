@@ -8,6 +8,7 @@ interface CoopLobbyProps {
   playerName: string;
   joinId: string;
   isConnecting?: boolean;
+  isHost?: boolean;
   error?: string | null;
   selectedCategory: WordCategory | null;
   onCategoryChange: (category: WordCategory | null) => void;
@@ -17,7 +18,12 @@ interface CoopLobbyProps {
   onJoinRoom: () => void;
 }
 
-export function CoopLobby({ selectedCategory, onCategoryChange, ...props }: CoopLobbyProps) {
+export function CoopLobby({
+  selectedCategory,
+  onCategoryChange,
+  isHost,
+  ...props
+}: CoopLobbyProps) {
   return (
     <>
       <MultiplayerLobby
@@ -29,7 +35,13 @@ export function CoopLobby({ selectedCategory, onCategoryChange, ...props }: Coop
         joinButtonLabel="Rejoindre"
         idPrefix="coop"
       />
-      <CategorySelector selected={selectedCategory} onSelect={onCategoryChange} className="mt-4" />
+      {isHost && (
+        <CategorySelector
+          selected={selectedCategory}
+          onSelect={onCategoryChange}
+          className="mt-4"
+        />
+      )}
     </>
   );
 }
