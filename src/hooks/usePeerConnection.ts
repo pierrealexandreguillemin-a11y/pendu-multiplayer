@@ -102,10 +102,11 @@ function useReconnectEffect({
   setters,
   setupConnection,
 }: ReconnectOptions) {
+  const { hostIdRef, reconnectAttemptsRef, peerRef, reconnectTimerRef } = refs;
   useEffect(() => {
-    if (reconnectTrigger === 0 || refs.hostIdRef.current === null) return;
-    const attempt = refs.reconnectAttemptsRef.current + 1;
-    refs.reconnectAttemptsRef.current = attempt;
+    if (reconnectTrigger === 0 || hostIdRef.current === null) return;
+    const attempt = reconnectAttemptsRef.current + 1;
+    reconnectAttemptsRef.current = attempt;
     const delayMs = Math.pow(2, attempt - 1) * 1000;
     console.info(
       `[PeerConnection] Reconnect attempt ${attempt}/${MAX_RECONNECT_ATTEMPTS} in ${delayMs}ms`
@@ -113,23 +114,23 @@ function useReconnectEffect({
     const timerId = setTimeout(() => {
       if (attempt > MAX_RECONNECT_ATTEMPTS) {
         console.warn('[PeerConnection] Max reconnect attempts reached, giving up');
-        refs.reconnectAttemptsRef.current = 0;
-        refs.hostIdRef.current = null;
+        reconnectAttemptsRef.current = 0;
+        hostIdRef.current = null;
         setters.setStatus('disconnected');
         return;
       }
-      const targetHostId = refs.hostIdRef.current;
+      const targetHostId = hostIdRef.current;
       if (targetHostId === null) return;
-      refs.peerRef.current?.destroy();
+      peerRef.current?.destroy();
       const peer = new Peer();
-      refs.peerRef.current = peer;
+      peerRef.current = peer;
       peer.on('open', (id) => {
         setters.setPeerId(id);
         const conn = peer.connect(targetHostId, { reliable: true });
         setupConnection(conn);
         conn.on('open', () => {
           console.info('[PeerConnection] Reconnected successfully');
-          refs.reconnectAttemptsRef.current = 0;
+          reconnectAttemptsRef.current = 0;
         });
         conn.on('error', () => {
           setters.setReconnectTrigger((n) => n + 1);
@@ -139,10 +140,10 @@ function useReconnectEffect({
         setters.setReconnectTrigger((n) => n + 1);
       });
     }, delayMs);
-    refs.reconnectTimerRef.current = timerId;
+    reconnectTimerRef.current = timerId;
     return () => {
       clearTimeout(timerId);
-      refs.reconnectTimerRef.current = null;
+      reconnectTimerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reconnectTrigger]);
@@ -300,18 +301,23 @@ export function usePeerConnection(): UsePeerConnectionReturn {
     setReconnectTrigger,
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const setupConnection = useCallback(makeSetupConnection(refs, setters), []);
+  const setupConnection = useCallback(
+    (conn: DataConnection) => makeSetupConnection(refs, setters)(conn),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
   useReconnectEffect({ reconnectTrigger, refs, setters, setupConnection });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const createRoom = useCallback(makeCreateRoom(refs, setters, setIsHost, setupConnection), [
-    setupConnection,
-  ]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const joinRoom = useCallback(makeJoinRoom(refs, setters, setIsHost, setupConnection), [
-    setupConnection,
-  ]);
+  const createRoom = useCallback(
+    () => makeCreateRoom(refs, setters, setIsHost, setupConnection)(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setupConnection]
+  );
+  const joinRoom = useCallback(
+    (hostId: string) => makeJoinRoom(refs, setters, setIsHost, setupConnection)(hostId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setupConnection]
+  );
 
   const sendMessage = useCallback((message: GameMessage) => {
     Array.from(connectionsRef.current.values()).forEach((conn) => {
@@ -320,9 +326,9 @@ export function usePeerConnection(): UsePeerConnectionReturn {
   }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const disconnect = useCallback(makeDisconnect(refs, setters, setIsHost), []);
+  const disconnect = useCallback(() => makeDisconnect(refs, setters, setIsHost)(), []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const onMessage = useCallback(makeOnMessage(refs), []);
+  const onMessage = useCallback((handler: MessageHandler) => makeOnMessage(refs)(handler), []);
   const offMessage = useCallback(() => {
     messageHandlerRef.current = null;
     messageBufferRef.current = [];
